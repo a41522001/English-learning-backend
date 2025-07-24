@@ -1,10 +1,23 @@
+interface ApiErrorType {
+  statusCode?: number;
+  errorCode?: number;
+}
 class ApiError extends Error {
-  public statusCode: number;
-  public code: number;
-  constructor(message: string, statusCode: number, code?: number) {
+  statusCode: number;
+  errorCode?: number;
+  isOperational: boolean;
+  constructor(message: string, { statusCode, errorCode }: ApiErrorType = {}) {
     super(message);
-    this.statusCode = statusCode;
-    this.code = code || statusCode;
+    this.name = 'ApiError';
+    this.statusCode = statusCode ?? 500;
+    this.isOperational = true;
+    this.errorCode = errorCode ?? statusCode;
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+  static badRequest(message: string, errorCode?: number) {
+    return new ApiError(message, { statusCode: 400, errorCode });
   }
 }
+
 export default ApiError;

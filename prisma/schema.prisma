@@ -50,12 +50,13 @@ model word_mean {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model words {
-  id            String          @id @default(dbgenerated("(uuid())")) @db.Char(36)
-  word          String?         @unique(map: "word") @db.VarChar(39)
-  pronunciation String?         @db.VarChar(255)
-  category      category[]
-  word_mean     word_mean[]
-  words_storage words_storage[]
+  id                String          @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  word              String?         @unique(map: "word") @db.VarChar(39)
+  pronunciation     String?         @db.VarChar(255)
+  dictionary_status String          @db.VarChar(45)
+  category          category[]
+  word_mean         word_mean[]
+  words_storage     words_storage[]
 }
 
 model words_storage {

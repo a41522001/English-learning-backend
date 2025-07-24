@@ -10,7 +10,7 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     if (isUserExist) {
       next();
     } else {
-      throw new ApiError('找不到此使用者', 401, 400);
+      throw new ApiError('找不到此使用者', { statusCode: 401, errorCode: 400 });
     }
   } catch (error) {
     next(error);

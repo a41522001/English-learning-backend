@@ -1,10 +1,11 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import dotenv from 'dotenv';
+import { env } from '../config/env';
 import type { DecodedToken, TokenOptions, TokenType } from '../types/index';
 import { Request } from 'express';
 import ApiError from '../models/errorModel';
-dotenv.config();
+import axios from 'axios';
+import * as deepl from 'deepl-node';
 
 /**
  * 創建Token
@@ -17,11 +18,11 @@ export const createToken = (userId: string, email: string, type: keyof TokenType
   const tokenObject = { id: userId, email: email };
   const tokenOptions: TokenOptions = {
     access: {
-      secret: process.env.ACCESS_TOKEN_SECRET!,
+      secret: env.ACCESS_TOKEN_SECRET,
       expire: '15m',
     },
     refresh: {
-      secret: process.env.REFRESH_TOKEN_SECRET!,
+      secret: env.REFRESH_TOKEN_SECRET,
       expire: '7d',
     },
   } as const;
@@ -60,16 +61,16 @@ export const decodeAccessToken = (req: Request): Promise<DecodedToken> => {
     const accessToken = req.cookies.access;
 
     if (!accessToken) {
-      return reject(new ApiError('無攜帶token', 401));
+      return reject(new ApiError('無攜帶token', { statusCode: 401 }));
     }
-    jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!, (err: any, decoded: any) => {
+    jwt.verify(accessToken, env.ACCESS_TOKEN_SECRET, (err: any, decoded: any) => {
       if (err) {
         if (err.name === 'TokenExpiredError') {
-          reject(new ApiError('Token已過期', 401));
+          reject(new ApiError('Token已過期', { statusCode: 401 }));
         } else if (err.name === 'JsonWebTokenError') {
-          reject(new ApiError('請重新登入', 401, 403));
+          reject(new ApiError('請重新登入', { statusCode: 401, errorCode: 403 }));
         } else {
-          reject(new ApiError('伺服器錯誤', 500));
+          reject(new Error());
         }
         return;
       }
@@ -82,18 +83,48 @@ export const decodeAccessToken = (req: Request): Promise<DecodedToken> => {
 export const decodeRefreshToken = (req: Request): Promise<DecodedToken> => {
   return new Promise((resolve, reject) => {
     const refreshToken = req.cookies.refresh;
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!, (err: any, decoded: any) => {
+    jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET, (err: any, decoded: any) => {
       if (err) {
-        return reject(new ApiError('請重新登入', 401, 403));
+        return reject(new ApiError('請重新登入', { statusCode: 401, errorCode: 403 }));
       }
       resolve(decoded as DecodedToken);
     });
   });
 };
-// 處理資料庫錯誤或自定義錯誤
-export const handleServiceError = (error: unknown): never => {
-  if (error instanceof ApiError) {
-    throw error;
+// Dictionary API
+export const handleGetDictionary = async (word: string) => {
+  const dictionaryURL = env.DICTIONARY_API_KEY;
+  try {
+    const res = await axios(`${dictionaryURL}${word}`);
+    const result = res.data.map((item: any) => {
+      const { word, phonetic, phonetics, meanings } = item;
+      const mean = meanings[0];
+      return {
+        word,
+        phonetic,
+        pronounce: phonetics[0]?.audio ?? '',
+        mean: mean?.partOfSpeech ?? '',
+        definition: mean?.definitions[0]?.definition ?? '',
+        example: mean?.definitions[0]?.example ?? '',
+      };
+    });
+    // console.dir(res.data, {
+    //   depth: null, // null = 不限制深度
+    // });
+    // console.log(result);
+
+    return { ok: true, word, result };
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && error.response?.status && error.response.data.title === 'No Definitions Found') {
+      return { ok: false, word, reason: 'NOT_FOUND', error: error };
+    }
+    return { ok: false, word, reason: 'NETWORK', error: error };
   }
-  throw new ApiError('伺服器發生未知錯誤，請稍後再試', 500);
+};
+// deepL API
+export const handleDeepLTranslator = async (origin: string) => {
+  const authKey = env.DEEPL_API_KEY;
+  const translator = new deepl.Translator(authKey);
+  const result = await translator.translateText(origin, 'en', 'zh-HANT');
+  return result;
 };
