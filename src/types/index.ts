@@ -13,8 +13,8 @@ export interface TokenType {
   refresh: string;
 }
 export interface DecodedToken {
-  id: string;
-  email: string;
+  sub: string;
+  jti: string;
   iat: number;
   exp: number;
 }

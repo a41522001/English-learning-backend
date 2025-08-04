@@ -5,8 +5,8 @@ import ApiError from '../models/errorModel';
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await decodeAccessToken(req);
-    const { id, email } = result;
-    const isUserExist = await checkAccessToken(id, email);
+    const { sub } = result;
+    const isUserExist = await checkAccessToken(sub);
     if (isUserExist) {
       next();
     } else {

@@ -6,30 +6,24 @@ import { Request } from 'express';
 import ApiError from '../models/errorModel';
 import axios from 'axios';
 import * as deepl from 'deepl-node';
-
+import { createHash, randomUUID } from 'crypto';
+import type { StringValue } from 'ms';
 /**
  * 創建Token
  * @param {string} userId - user.id
- * @param {string} email - user.email
- * @param {keyof TokenExpire} type - token 的類型，決定過期時間 'access' or 'refresh'
  * @returns {string} token
  */
-export const createToken = (userId: string, email: string, type: keyof TokenType): string => {
-  const tokenObject = { id: userId, email: email };
-  const tokenOptions: TokenOptions = {
-    access: {
-      secret: env.ACCESS_TOKEN_SECRET,
-      expire: '15m',
-    },
-    refresh: {
-      secret: env.REFRESH_TOKEN_SECRET,
-      expire: '7d',
-    },
-  } as const;
-  const options: SignOptions = {
-    expiresIn: tokenOptions[type].expire,
+export const createAccessToken = (userId: string): string => {
+  const payload = {
+    sub: userId,
+    jti: createHash('sha256').update(randomUUID()).digest('hex'),
   };
-  const token = jwt.sign(tokenObject, tokenOptions[type].secret, options);
+
+  const options: SignOptions = {
+    expiresIn: env.ACCESS_TOKEN_EXPIRE as StringValue,
+    algorithm: 'HS256',
+  };
+  const token = jwt.sign(payload, env.ACCESS_TOKEN_SECRET, options);
   return token;
 };
 
@@ -79,18 +73,6 @@ export const decodeAccessToken = (req: Request): Promise<DecodedToken> => {
   });
 };
 
-// 解密refresh token
-export const decodeRefreshToken = (req: Request): Promise<DecodedToken> => {
-  return new Promise((resolve, reject) => {
-    const refreshToken = req.cookies.refresh;
-    jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET, (err: any, decoded: any) => {
-      if (err) {
-        return reject(new ApiError('請重新登入', { statusCode: 401, errorCode: 403 }));
-      }
-      resolve(decoded as DecodedToken);
-    });
-  });
-};
 // Dictionary API
 export const handleGetDictionary = async (word: string) => {
   const dictionaryURL = env.DICTIONARY_API_KEY;

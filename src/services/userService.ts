@@ -1,4 +1,4 @@
-import { saltPassword, decodePassword, createToken, decodeRefreshToken } from '../utils';
+import { saltPassword, decodePassword, createAccessToken } from '../utils';
 import prisma from '../config/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import ApiError from '../models/errorModel';
@@ -37,8 +37,20 @@ export const handleLogin = async (email: string, password: string): Promise<Logi
   if (user) {
     const isPasswordCorrect = await decodePassword(password, user.password!);
     if (isPasswordCorrect) {
-      const accessToken = createToken(user.id, email, 'access');
-      const refreshToken = createToken(user.id, email, 'refresh');
+      const refreshToken = uuidv4();
+      await prisma.token.upsert({
+        where: {
+          user_id: user.id,
+        },
+        update: {
+          refresh_token: refreshToken,
+        },
+        create: {
+          user_id: user.id,
+          refresh_token: refreshToken,
+        },
+      });
+      const accessToken = createAccessToken(user.id);
       return {
         access: accessToken,
         refresh: refreshToken,
@@ -52,7 +64,7 @@ export const handleLogin = async (email: string, password: string): Promise<Logi
 };
 
 // 取得userinfo
-export const getUserinfo = async (id: string, email: string): Promise<Userinfo> => {
+export const getUserinfo = async (id: string): Promise<Userinfo> => {
   const user = await prisma.users.findFirst({
     select: {
       id: true,
@@ -62,10 +74,8 @@ export const getUserinfo = async (id: string, email: string): Promise<Userinfo> 
     },
     where: {
       id: id,
-      email: email,
     },
   });
-
   if (user) {
     return user;
   } else {
@@ -74,11 +84,10 @@ export const getUserinfo = async (id: string, email: string): Promise<Userinfo> 
 };
 
 // 確認Access Token解開的資訊是否真實存在
-export const checkAccessToken = async (id: string, email: string): Promise<boolean> => {
+export const checkAccessToken = async (id: string): Promise<boolean> => {
   const user = await prisma.users.findFirst({
     where: {
       id: id,
-      email: email,
     },
   });
   const isUserExist = !!user;
@@ -86,13 +95,33 @@ export const checkAccessToken = async (id: string, email: string): Promise<boole
 };
 
 // refresh token
-export const handleRefreshToken = async (req: Request): Promise<string> => {
-  const result = await decodeRefreshToken(req);
-  const { id, email } = result;
-  const isUserExist = await checkAccessToken(id, email);
+export const handleRefreshToken = async (req: Request): Promise<{ accessToken: string; refreshToken: string }> => {
+  const refreshToken = req.cookies.refresh;
+  const isUserExist = await prisma.token.findFirst({
+    where: {
+      refresh_token: refreshToken,
+    },
+  });
   if (isUserExist) {
-    const accessToken = createToken(id, email, 'access');
-    return accessToken;
+    const userId = isUserExist.user_id;
+    const refreshToken = uuidv4();
+    await prisma.token.upsert({
+      where: {
+        user_id: userId,
+      },
+      update: {
+        refresh_token: refreshToken,
+      },
+      create: {
+        user_id: userId,
+        refresh_token: refreshToken,
+      },
+    });
+    const accessToken = createAccessToken(userId);
+    return {
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    };
   } else {
     throw new ApiError('找不到使用者，請重新登入', { statusCode: 401, errorCode: 403 });
   }

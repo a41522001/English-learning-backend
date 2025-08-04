@@ -35,8 +35,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 export const userinfo = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const decodedUser = await decodeAccessToken(req);
-    const { id, email } = decodedUser;
-    const result = await getUserinfo(id, email);
+    const { sub } = decodedUser;
+    const result = await getUserinfo(sub);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
@@ -44,9 +44,15 @@ export const userinfo = async (req: Request, res: Response, next: NextFunction) 
 };
 export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const accessToken = await handleRefreshToken(req);
+    const { accessToken, refreshToken } = await handleRefreshToken(req);
     res.cookie('access', accessToken, {
       maxAge: 15 * 60 * 1000,
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+    });
+    res.cookie('refresh', refreshToken, {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       secure: false,
       sameSite: 'lax',

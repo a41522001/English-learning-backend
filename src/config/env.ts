@@ -12,6 +12,7 @@ export const env = {
   PORT: Number(process.env.PORT ?? 3000),
   FRONT_END_URL: validateEnv('FRONT_END_URL'),
   ACCESS_TOKEN_SECRET: validateEnv('ACCESS_TOKEN_SECRET'),
+  ACCESS_TOKEN_EXPIRE: validateEnv('ACCESS_TOKEN_EXPIRE'),
   REFRESH_TOKEN_SECRET: validateEnv('REFRESH_TOKEN_SECRET'),
   DEEPL_API_KEY: validateEnv('DEEPL_API_KEY'),
   DICTIONARY_API_KEY: validateEnv('DICTIONARY_API_KEY'),
