@@ -4,7 +4,7 @@ import { env } from '../config/env';
 import type { DecodedToken, TokenOptions, TokenType } from '../types/index';
 import { Request } from 'express';
 import ApiError from '../models/errorModel';
-import axios from 'axios';
+import axios, { AxiosPromise } from 'axios';
 import * as deepl from 'deepl-node';
 import { createHash, randomUUID } from 'crypto';
 import type { StringValue } from 'ms';
@@ -15,6 +15,7 @@ import type { StringValue } from 'ms';
  */
 export const createAccessToken = (userId: string): string => {
   const payload = {
+    issuer: env.API_URL,
     sub: userId,
     jti: createHash('sha256').update(randomUUID()).digest('hex'),
   };
@@ -109,4 +110,31 @@ export const handleDeepLTranslator = async (origin: string) => {
   const translator = new deepl.Translator(authKey);
   const result = await translator.translateText(origin, 'en', 'zh-HANT');
   return result;
+};
+// 取得User ID
+export const getUserId = async (req: Request): Promise<string> => {
+  const { sub } = await decodeAccessToken(req);
+  return sub;
+};
+// 韋氏辭典
+export const getDictionary = (word: string) => {
+  const dictionaryURL = env.MERRIAM_WEBSTER_URL;
+  const dictionaryAPIKEY = env.MERRIAM_WEBSTER_API_KEY;
+  const API_URL = `${dictionaryURL.replace('{}', word)}?key=${dictionaryAPIKEY}`;
+  return axios.get(API_URL);
+};
+// WORDS_API
+export const getWordsAPI = (word: string) => {
+  const wordsURL = env.WORDS_API_URL.replace('{}', word);
+  const wordsAPIKEY = env.WORDS_API_KEY;
+  const wordsHOST = env.WORDS_API_HOST;
+  const options = {
+    method: 'GET',
+    url: wordsURL,
+    headers: {
+      'x-rapidapi-key': wordsAPIKEY,
+      'x-rapidapi-host': wordsHOST,
+    },
+  };
+  return axios.request(options);
 };

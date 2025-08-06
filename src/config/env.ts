@@ -16,4 +16,10 @@ export const env = {
   REFRESH_TOKEN_SECRET: validateEnv('REFRESH_TOKEN_SECRET'),
   DEEPL_API_KEY: validateEnv('DEEPL_API_KEY'),
   DICTIONARY_API_KEY: validateEnv('DICTIONARY_API_KEY'),
+  API_URL: validateEnv('API_URL'),
+  MERRIAM_WEBSTER_URL: validateEnv('MERRIAM_WEBSTER_URL'),
+  MERRIAM_WEBSTER_API_KEY: validateEnv('MERRIAM_WEBSTER_API_KEY'),
+  WORDS_API_URL: validateEnv('WORDS_API_URL'),
+  WORDS_API_KEY: validateEnv('WORDS_API_KEY'),
+  WORDS_API_HOST: validateEnv('WORDS_API_HOST'),
 } as const;

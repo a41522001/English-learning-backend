@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { handleSignup, handleLogin, getUserinfo, handleRefreshToken } from '../services/userService';
 import ResponseModel from '../utils/response';
-import { decodeAccessToken } from '../utils/index';
+import { decodeAccessToken, getUserId } from '../utils/index';
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { username, email, password } = req.body;
@@ -34,9 +34,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 };
 export const userinfo = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const decodedUser = await decodeAccessToken(req);
-    const { sub } = decodedUser;
-    const result = await getUserinfo(sub);
+    const userId = await getUserId(req);
+    const result = await getUserinfo(userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
@@ -58,6 +57,13 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
       sameSite: 'lax',
     });
     res.status(200).json(ResponseModel.successResponse(null));
+  } catch (error) {
+    next(error);
+  }
+};
+export const forgetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
   } catch (error) {
     next(error);
   }

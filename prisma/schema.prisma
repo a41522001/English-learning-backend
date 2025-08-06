@@ -11,7 +11,7 @@ datasource db {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model category {
   id        String  @id @default(dbgenerated("(uuid())")) @db.Char(36)
-  word_id   String  @db.Char(36)
+  word_id   String  @unique @db.Char(36)
   name      String? @db.VarChar(25)
   show_name String? @db.VarChar(25)
   words     words   @relation(fields: [word_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "category_ibfk_1")
@@ -36,13 +36,13 @@ model users {
 }
 
 model word_mean {
-  id                  String  @id @db.Char(36)
+  id                  String  @id @default(dbgenerated("(uuid())")) @db.Char(36)
   word_id             String? @db.Char(36)
   example_sentence_en String? @db.VarChar(80)
   example_sentence_zh String? @db.VarChar(80)
-  mean_en             String? @db.VarChar(50)
+  mean_en             String? @db.VarChar(80)
   mean_zh             String? @db.VarChar(50)
-  part_of_speech      String? @db.VarChar(10)
+  part_of_speech      String? @db.VarChar(30)
   words               words?  @relation(fields: [word_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "word_mean_ibfk_1")
 
   @@index([word_id], map: "word_id")
@@ -50,19 +50,17 @@ model word_mean {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model words {
-  id                String          @id @default(dbgenerated("(uuid())")) @db.Char(36)
-  word              String?         @unique(map: "word") @db.VarChar(39)
-  pronunciation     String?         @db.VarChar(255)
-  dictionary_status String          @db.VarChar(45)
-  category          category[]
-  word_mean         word_mean[]
-  words_storage     words_storage[]
+  id            String          @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  word          String?         @unique(map: "word") @db.VarChar(39)
+  pronunciation String?         @db.VarChar(255)
+  category      category?
+  word_mean     word_mean[]
+  words_storage words_storage[]
 }
 
 model words_storage {
   user_id  String    @db.Char(36)
   word_id  String    @db.Char(36)
-  learned  Boolean?
   learn_at DateTime? @db.Timestamp(0)
   users    users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "words_storage_ibfk_1")
   words    words     @relation(fields: [word_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "words_storage_ibfk_2")

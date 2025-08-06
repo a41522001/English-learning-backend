@@ -4,8 +4,7 @@ import { decodeAccessToken } from '../utils/index';
 import ApiError from '../models/errorModel';
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await decodeAccessToken(req);
-    const { sub } = result;
+    const { sub } = await decodeAccessToken(req);
     const isUserExist = await checkAccessToken(sub);
     if (isUserExist) {
       next();

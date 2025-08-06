@@ -1,61 +1,48 @@
 import prisma from '../config/prisma';
-import { handleGetDictionary, handleDeepLTranslator } from '../utils/';
-import pLimit from 'p-limit';
-
-export const handleGetSubjectWords = async (subject: string) => {
-  const result = await prisma.category.findMany({
-    where: {
-      name: subject,
-      words: {
-        dictionary_status: {
-          not: 'not',
+import { handleGetDictionary, handleDeepLTranslator, getDictionary, getWordsAPI } from '../utils';
+export const handleGetSubjectWords = async (subject: string, userId: string) => {
+  const result = await prisma.words.findMany({
+    select: {
+      id: true,
+      word: true,
+      pronunciation: true,
+      category: {
+        select: {
+          name: true,
+          show_name: true,
         },
       },
     },
-    include: {
-      words: true,
+    where: {
+      words_storage: {
+        none: {
+          user_id: userId,
+        },
+      },
+      category: {
+        name: subject,
+      },
     },
-    take: 25,
+    take: 10,
   });
-  const limit = pLimit(5);
-  const dictionaryTasks = result.map((item) => {
-    const word = item.words.word!;
-    return limit(() => handleGetDictionary(word));
+  const data = result.map((item) => {
+    const { id, word, pronunciation, category } = item;
+    return {
+      id,
+      word,
+      pronunciation,
+      category: category!.name,
+      categoryName: category!.show_name,
+    };
   });
-  const response = await Promise.allSettled(dictionaryTasks);
-  // console.log(response);
-  const okWords: string[] = [];
-  const errorWords: string[] = [];
-  const res = response.map((item: any) => {
-    const value = item.value;
-    console.log(value.ok);
-    if (value.ok) {
-      okWords.push(value.word);
-      return value.result;
-    } else if (!value.ok && value.reason === 'NOT_FOUND') {
-      errorWords.push(value.word);
-    }
-  });
-  console.log(okWords);
-  console.log(errorWords);
-  await prisma.$transaction([
-    prisma.words.updateMany({
-      where: { word: { in: okWords } },
-      data: { dictionary_status: 'ok' },
-    }),
-    prisma.words.updateMany({
-      where: { word: { in: errorWords } },
-      data: { dictionary_status: 'not' },
-    }),
-  ]);
-  // await prisma.words.updateMany({
-  //   where: {
-  //     dictionary_status: 'not',
-  //   },
-  //   data: {
-  //     dictionary_status: 'pending',
-  //   },
-  // });
-  return res.filter((item) => item).slice(0, 10);
+  return data;
 };
 export const handleGetDailyWords = async () => {};
+export const handleGetWordExample = async (wordId: string) => {
+  const result = await prisma.word_mean.findMany({
+    where: {
+      word_id: wordId,
+    },
+  });
+  return result;
+};
