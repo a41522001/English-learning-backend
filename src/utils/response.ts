@@ -19,7 +19,7 @@ class ResponseModel<T> {
   static errorResponse(message: string, code: number, data: null = null) {
     return new ResponseModel(code, message, data);
   }
-  static loginResponse(message: string, code: number, data: null = null) {
+  static loginResponse<T>(message: string, code: number, data: T) {
     return new ResponseModel(code, message, data);
   }
 }

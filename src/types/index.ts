@@ -27,4 +27,22 @@ export interface Userinfo {
 export interface LoginResponse {
   access: string;
   refresh: string;
+  isDaily: boolean;
+}
+export interface MappingPartOfSpeech {
+  noun: string;
+  verb: string;
+  adjective: string;
+  adverb: string;
+  pronoun: string;
+  preposition: string;
+  numeral: string;
+  determiner: string;
+  'modal verb': string;
+  conjunction: string;
+  article: string;
+  'auxiliary verb': string;
+  particle: string;
+  interjection: string;
+  ordinal: string;
 }

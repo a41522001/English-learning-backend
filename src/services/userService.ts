@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import ApiError from '../models/errorModel';
 import { LoginResponse, Userinfo } from '../types';
 import { Request } from 'express';
+import { checkDailyWordsTaken } from './wordService';
 // 註冊
 export const handleSignup = async (username: string, email: string, password: string): Promise<void> => {
   const bcryptPassword = await saltPassword(password);
@@ -51,9 +52,12 @@ export const handleLogin = async (email: string, password: string): Promise<Logi
         },
       });
       const accessToken = createAccessToken(user.id);
+      const isDaily = await checkDailyWordsTaken(user.id);
+
       return {
         access: accessToken,
         refresh: refreshToken,
+        isDaily,
       };
     } else {
       throw new ApiError('錯誤的帳號密碼', { statusCode: 400 });

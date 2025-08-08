@@ -14,7 +14,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    const { access, refresh } = await handleLogin(email, password);
+    const { access, refresh, ...isDaily } = await handleLogin(email, password);
     res.cookie('access', access, {
       maxAge: 15 * 60 * 1000,
       httpOnly: true,
@@ -27,7 +27,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       secure: false,
       sameSite: 'lax',
     });
-    res.status(200).json(ResponseModel.loginResponse('登入成功', 100));
+    res.status(200).json(ResponseModel.loginResponse('登入成功', 100, isDaily));
   } catch (error) {
     next(error);
   }

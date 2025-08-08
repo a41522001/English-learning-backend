@@ -138,3 +138,9 @@ export const getWordsAPI = (word: string) => {
   };
   return axios.request(options);
 };
+// 取得今日日期
+// YYYYMMDD
+export const getToday = () => convertDate(new Date());
+// 轉換日期
+// ISO時間轉YYYYMMDD
+export const convertDate = (date: Date) => date.toISOString().slice(0, 10).replace(/-/g, '');
