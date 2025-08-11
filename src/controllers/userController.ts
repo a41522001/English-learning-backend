@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { handleSignup, handleLogin, getUserinfo, handleRefreshToken } from '../services/userService';
+import { handleSignup, handleLogin, getUserinfo, handleRefreshToken, handleLogout } from '../services/userService';
 import ResponseModel from '../utils/response';
 import { decodeAccessToken, getUserId } from '../utils/index';
+
+// 註冊
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { username, email, password } = req.body;
@@ -11,6 +13,8 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
     next(error);
   }
 };
+
+// 登入
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
@@ -20,18 +24,22 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
+      path: '/',
     });
     res.cookie('refresh', refresh, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
+      path: '/',
     });
     res.status(200).json(ResponseModel.loginResponse('登入成功', 100, isDaily));
   } catch (error) {
     next(error);
   }
 };
+
+// 取得使用者資訊
 export const userinfo = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = await getUserId(req);
@@ -41,6 +49,8 @@ export const userinfo = async (req: Request, res: Response, next: NextFunction) 
     next(error);
   }
 };
+
+// refresh token
 export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { accessToken, refreshToken } = await handleRefreshToken(req);
@@ -49,18 +59,50 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
+      path: '/',
     });
     res.cookie('refresh', refreshToken, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
+      path: '/',
     });
     res.status(200).json(ResponseModel.successResponse(null));
+  } catch (error) {
+    // TODO: 這邊如果噴錯需要清掉cookie
+    next(error);
+  }
+};
+
+// 登出
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = await getUserId(req);
+    const isSuccess = await handleLogout(userId);
+    if (isSuccess) {
+      res.clearCookie('access', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      });
+      res.clearCookie('refresh', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      });
+      res.status(200).json(ResponseModel.successResponse(null));
+    } else {
+      res.status(400).json(ResponseModel.errorResponse('發生錯誤', 400));
+    }
   } catch (error) {
     next(error);
   }
 };
+// 忘記密碼
+// TODO: 未做
 export const forgetPassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email } = req.body;

@@ -22,4 +22,5 @@ export const env = {
   WORDS_API_URL: validateEnv('WORDS_API_URL'),
   WORDS_API_KEY: validateEnv('WORDS_API_KEY'),
   WORDS_API_HOST: validateEnv('WORDS_API_HOST'),
+  REFRESH_TOKEN_EXPIRE: validateEnv('REFRESH_TOKEN_EXPIRE'),
 } as const;

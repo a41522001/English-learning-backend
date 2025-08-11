@@ -18,12 +18,6 @@ export interface DecodedToken {
   iat: number;
   exp: number;
 }
-export interface Userinfo {
-  id: string;
-  username: string;
-  email: string;
-  created_at: Date;
-}
 export interface LoginResponse {
   access: string;
   refresh: string;

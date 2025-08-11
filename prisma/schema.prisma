@@ -20,9 +20,11 @@ model category {
 }
 
 model token {
-  user_id       String  @id @db.Char(36)
-  refresh_token String? @db.VarChar(100)
-  users         users   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "token_ibfk_1")
+  user_id       String   @id @db.Char(36)
+  refresh_token String?  @db.VarChar(100)
+  created_at    DateTime @default(now())
+  expired_at    DateTime @db.Timestamp(0)
+  users         users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "token_ibfk_1")
 }
 
 model users {

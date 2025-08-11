@@ -144,3 +144,10 @@ export const getToday = () => convertDate(new Date());
 // 轉換日期
 // ISO時間轉YYYYMMDD
 export const convertDate = (date: Date) => date.toISOString().slice(0, 10).replace(/-/g, '');
+// 產生refresh token到期時間
+export const generateRefreshTokenTime = (): Date => {
+  const days = +env.REFRESH_TOKEN_EXPIRE;
+  const expireDate = new Date();
+  expireDate.setDate(expireDate.getDate() + days);
+  return expireDate;
+};

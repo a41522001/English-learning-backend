@@ -1,7 +1,7 @@
 import prisma from '../config/prisma';
 import { MappingPartOfSpeech } from '../types';
 import { handleGetDictionary, handleDeepLTranslator, getDictionary, getWordsAPI, getToday } from '../utils';
-import type { WordsSubject } from '../types/ResponseType';
+import type { CheckDaily, WordExample, WordsSubject } from '../types/ResponseType';
 import ApiError from '../models/errorModel';
 const mappingPartOfSpeech: MappingPartOfSpeech = {
   noun: '名詞',
@@ -23,7 +23,7 @@ const mappingPartOfSpeech: MappingPartOfSpeech = {
 
 // 取得主題單字
 export const handleGetSubjectWords = async (subject: string, userId: string): Promise<WordsSubject[]> => {
-  const isDaily = await checkDailyWordsTaken(userId);
+  const { isDaily } = await checkDailyWordsTaken(userId);
   if (isDaily || !subject) {
     return handleGetDailyWords(userId);
   }
@@ -64,6 +64,7 @@ export const handleGetSubjectWords = async (subject: string, userId: string): Pr
       pronunciation: pronunciation ?? '',
       category: category?.name ?? '',
       categoryName: category?.show_name ?? '',
+      learned: false,
     });
   });
   await saveDailyWord(userId, wordIds);
@@ -71,7 +72,7 @@ export const handleGetSubjectWords = async (subject: string, userId: string): Pr
 };
 
 // 取得每日單字
-export const handleGetDailyWords = async (userId: string) => {
+export const handleGetDailyWords = async (userId: string): Promise<WordsSubject[]> => {
   const today = new Date();
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
@@ -86,6 +87,17 @@ export const handleGetDailyWords = async (userId: string) => {
           show_name: true,
         },
       },
+      words_storage: {
+        where: {
+          user_id: userId,
+          learn_at: {
+            gte: start,
+            lt: end,
+          },
+        },
+        select: { word_id: true },
+        take: 1,
+      },
     },
     where: {
       words_daily: {
@@ -99,6 +111,7 @@ export const handleGetDailyWords = async (userId: string) => {
       },
     },
   });
+
   return result.map((item) => {
     const { id, word, pronunciation, category } = item;
     return {
@@ -107,11 +120,13 @@ export const handleGetDailyWords = async (userId: string) => {
       pronunciation: pronunciation ?? '',
       category: category?.name ?? '',
       categoryName: category?.show_name ?? '',
+      learned: item.words_storage.length > 0,
     };
   });
 };
+
 // 取得單字例句
-export const handleGetWordExample = async (wordId: string) => {
+export const handleGetWordExample = async (wordId: string): Promise<WordExample[]> => {
   const result = await prisma.word_mean.findMany({
     where: {
       word_id: wordId,
@@ -127,6 +142,7 @@ export const handleGetWordExample = async (wordId: string) => {
   });
   return mappingData;
 };
+
 // 儲存每日單字
 const saveDailyWord = async (userId: string, wordIds: string[]) => {
   await prisma.words_daily.createMany({
@@ -140,7 +156,7 @@ const saveDailyWord = async (userId: string, wordIds: string[]) => {
 };
 
 // 確認是否拿過每日單字
-export const checkDailyWordsTaken = async (userId: string): Promise<boolean> => {
+export const checkDailyWordsTaken = async (userId: string): Promise<CheckDaily> => {
   const today = new Date();
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
@@ -153,5 +169,43 @@ export const checkDailyWordsTaken = async (userId: string): Promise<boolean> => 
       },
     },
   });
-  return result ? true : false;
+  return {
+    isDaily: !!result,
+  };
+};
+
+// 儲存已學過單字
+export const handleSaveLearnedWord = async (userId: string, wordId: string | string[]) => {
+  if (Array.isArray(wordId)) {
+    await prisma.words_storage.createMany({
+      data: wordId.map((word) => {
+        return {
+          word_id: word,
+          user_id: userId,
+          learn_at: new Date(),
+        };
+      }),
+      skipDuplicates: true,
+    });
+  } else {
+    await prisma.words_storage.create({
+      data: {
+        word_id: wordId,
+        user_id: userId,
+        learn_at: new Date(),
+      },
+    });
+  }
+};
+
+// 刪除已儲存單字
+export const handleDeleteLearnedWord = async (userId: string, wordId: string) => {
+  await prisma.words_storage.delete({
+    where: {
+      user_id_word_id: {
+        user_id: userId,
+        word_id: wordId,
+      },
+    },
+  });
 };
