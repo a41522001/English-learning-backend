@@ -1,7 +1,7 @@
 import prisma from '../config/prisma';
 import { MappingPartOfSpeech } from '../types';
 import { handleGetDictionary, handleDeepLTranslator, getDictionary, getWordsAPI, getToday } from '../utils';
-import type { CheckDaily, WordExample, WordsSubject } from '../types/ResponseType';
+import type { CheckDaily, SubjectCategory, WordExample, WordsSubject } from '../types/ResponseType';
 import ApiError from '../models/errorModel';
 const mappingPartOfSpeech: MappingPartOfSpeech = {
   noun: '名詞',
@@ -21,6 +21,24 @@ const mappingPartOfSpeech: MappingPartOfSpeech = {
   ordinal: '序數詞',
 };
 
+// 取得主題類別
+export const handleGetSubjectCategory = async (): Promise<SubjectCategory[]> => {
+  const res = await prisma.category_setting.findMany();
+  const result = res.map((item) => {
+    const { bg_color, content, hover_color, icon, icon_color, subject, title } = item;
+    return {
+      bgColor: bg_color,
+      hoverColor: hover_color,
+      iconColor: icon_color,
+      content,
+      icon,
+      subject,
+      title,
+    };
+  });
+  return result;
+};
+
 // 取得主題單字
 export const handleGetSubjectWords = async (subject: string, userId: string): Promise<WordsSubject[]> => {
   const { isDaily } = await checkDailyWordsTaken(userId);
@@ -30,6 +48,7 @@ export const handleGetSubjectWords = async (subject: string, userId: string): Pr
 
   const wordIds: string[] = [];
   const data: WordsSubject[] = [];
+  let wordCount = 10;
   // TODO: 之後要改查詢方式 判斷result夠不夠10個沒有的話要繼續查 再沒有的話從別的類別查
   const result = await prisma.words.findMany({
     select: {
@@ -38,8 +57,12 @@ export const handleGetSubjectWords = async (subject: string, userId: string): Pr
       pronunciation: true,
       category: {
         select: {
-          name: true,
-          show_name: true,
+          category_setting: {
+            select: {
+              title: true,
+              subject: true,
+            },
+          },
         },
       },
     },
@@ -50,20 +73,23 @@ export const handleGetSubjectWords = async (subject: string, userId: string): Pr
         },
       },
       category: {
-        name: subject,
+        subject: subject,
       },
     },
-    take: 10,
+    take: wordCount,
   });
+
   result.forEach((item) => {
     const { id, word, pronunciation, category } = item;
+    const { category_setting } = category!;
+    const { title, subject } = category_setting;
     wordIds.push(id);
     data.push({
       id,
       word,
       pronunciation: pronunciation ?? '',
-      category: category?.name ?? '',
-      categoryName: category?.show_name ?? '',
+      category: subject,
+      categoryName: title,
       learned: false,
     });
   });
@@ -83,8 +109,12 @@ export const handleGetDailyWords = async (userId: string): Promise<WordsSubject[
       pronunciation: true,
       category: {
         select: {
-          name: true,
-          show_name: true,
+          category_setting: {
+            select: {
+              title: true,
+              subject: true,
+            },
+          },
         },
       },
       words_storage: {
@@ -114,12 +144,14 @@ export const handleGetDailyWords = async (userId: string): Promise<WordsSubject[
 
   return result.map((item) => {
     const { id, word, pronunciation, category } = item;
+    const { category_setting } = category!;
+    const { title, subject } = category_setting;
     return {
       id,
       word,
       pronunciation: pronunciation ?? '',
-      category: category?.name ?? '',
-      categoryName: category?.show_name ?? '',
+      category: subject,
+      categoryName: title,
       learned: item.words_storage.length > 0,
     };
   });
@@ -144,7 +176,7 @@ export const handleGetWordExample = async (wordId: string): Promise<WordExample[
 };
 
 // 儲存每日單字
-const saveDailyWord = async (userId: string, wordIds: string[]) => {
+const saveDailyWord = async (userId: string, wordIds: string[]): Promise<void> => {
   await prisma.words_daily.createMany({
     data: wordIds.map((wordId) => ({
       user_id: userId,
@@ -175,7 +207,7 @@ export const checkDailyWordsTaken = async (userId: string): Promise<CheckDaily> 
 };
 
 // 儲存已學過單字
-export const handleSaveLearnedWord = async (userId: string, wordId: string | string[]) => {
+export const handleSaveLearnedWord = async (userId: string, wordId: string | string[]): Promise<void> => {
   if (Array.isArray(wordId)) {
     await prisma.words_storage.createMany({
       data: wordId.map((word) => {
@@ -199,7 +231,7 @@ export const handleSaveLearnedWord = async (userId: string, wordId: string | str
 };
 
 // 刪除已儲存單字
-export const handleDeleteLearnedWord = async (userId: string, wordId: string) => {
+export const handleDeleteLearnedWord = async (userId: string, wordId: string): Promise<void> => {
   await prisma.words_storage.delete({
     where: {
       user_id_word_id: {
@@ -208,4 +240,51 @@ export const handleDeleteLearnedWord = async (userId: string, wordId: string) =>
       },
     },
   });
+};
+
+// 取得已學單字
+export const handleGetLearnedWords = async (userId: string) => {
+  const res = await prisma.words_storage.findMany({
+    select: {
+      word_id: true,
+      learn_at: true,
+      words: {
+        select: {
+          word: true,
+          pronunciation: true,
+          category: {
+            select: {
+              category_setting: {
+                select: {
+                  title: true,
+                  subject: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    where: {
+      user_id: userId,
+    },
+    orderBy: {
+      learn_at: 'asc',
+    },
+  });
+  const result = res.map((item) => {
+    const { word_id, learn_at, words } = item;
+    const { word, pronunciation, category } = words;
+    const { category_setting } = category!;
+    const { title, subject } = category_setting;
+    return {
+      wordId: word_id,
+      learnAt: learn_at,
+      word,
+      pronunciation,
+      category: subject,
+      categoryName: title,
+    };
+  });
+  return result;
 };

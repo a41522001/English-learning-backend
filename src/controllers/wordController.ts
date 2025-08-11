@@ -6,10 +6,21 @@ import {
   checkDailyWordsTaken,
   handleSaveLearnedWord,
   handleDeleteLearnedWord,
+  handleGetLearnedWords,
+  handleGetSubjectCategory,
 } from '../services/wordService';
 import ResponseModel from '../utils/response';
 import { getUserId } from '../utils';
 
+//
+export const getSubjectCategory = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await handleGetSubjectCategory();
+    res.status(200).json(ResponseModel.successResponse(result));
+  } catch (error) {
+    next(error);
+  }
+};
 // 取得主題單字
 export const getSubjectWords = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -73,6 +84,17 @@ export const deleteLearnedWord = async (req: Request, res: Response, next: NextF
     const userId = await getUserId(req);
     await handleDeleteLearnedWord(userId, wordId);
     res.status(200).json(ResponseModel.successResponse(null));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 取得已學過單字
+export const getLearnedWords = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = await getUserId(req);
+    const result = await handleGetLearnedWords(userId);
+    res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
   }

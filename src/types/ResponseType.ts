@@ -1,4 +1,13 @@
 // words
+export interface SubjectCategory {
+  bgColor: string;
+  hoverColor: string;
+  iconColor: string;
+  content: string;
+  icon: string;
+  subject: string;
+  title: string;
+}
 export interface WordsSubject {
   id: string;
   word: string;

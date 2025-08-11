@@ -10,11 +10,11 @@ datasource db {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model category {
-  id        String @id @default(dbgenerated("(uuid())")) @db.Char(36)
-  word_id   String @unique @db.Char(36)
-  name      String @db.VarChar(25)
-  show_name String @db.VarChar(25)
-  words     words  @relation(fields: [word_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "category_ibfk_1")
+  id               String           @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  word_id          String           @unique @db.Char(36)
+  subject          String           @db.VarChar(25)
+  words            words            @relation(fields: [word_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "category_ibfk_1")
+  category_setting category_setting @relation(fields: [subject], references: [subject])
 
   @@index([word_id], map: "category_ibfk_1")
 }
@@ -81,4 +81,15 @@ model words_daily {
   words      words    @relation(fields: [word_id], references: [id])
 
   @@id([word_id, user_id])
+}
+
+model category_setting {
+  title       String     @db.VarChar(20)
+  content     String     @db.VarChar(50)
+  subject     String     @id @db.VarChar(25)
+  bg_color    String     @db.VarChar(20)
+  hover_color String     @db.VarChar(30)
+  icon        String     @db.VarChar(20)
+  icon_color  String     @db.VarChar(20)
+  category    category[]
 }
