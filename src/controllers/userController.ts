@@ -1,10 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { handleSignup, handleLogin, getUserinfo, handleRefreshToken, handleLogout } from '../services/userService';
 import ResponseModel from '../utils/response';
-import { decodeAccessToken, getUserId } from '../utils/index';
+import { getUserId } from '../utils/index';
+import type { RequestCustom } from '../types/index';
 
 // 註冊
-export const signup = async (req: Request, res: Response, next: NextFunction) => {
+export const signup = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const { username, email, password } = req.body;
     await handleSignup(username, email, password);
@@ -15,7 +16,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 };
 
 // 登入
-export const login = async (req: Request, res: Response, next: NextFunction) => {
+export const login = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
     const { access, refresh, ...isDaily } = await handleLogin(email, password);
@@ -40,9 +41,9 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 // 取得使用者資訊
-export const userinfo = async (req: Request, res: Response, next: NextFunction) => {
+export const userinfo = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
-    const userId = await getUserId(req);
+    const userId = getUserId(req);
     const result = await getUserinfo(userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
@@ -51,11 +52,13 @@ export const userinfo = async (req: Request, res: Response, next: NextFunction) 
 };
 
 // refresh token
-export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
+// TODO: 已棄用 之後要刪掉
+export const refreshToken = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const { accessToken, refreshToken } = await handleRefreshToken(req);
     res.cookie('access', accessToken, {
-      maxAge: 15 * 60 * 1000,
+      // maxAge: 15 * 60 * 1000,
+      maxAge: 1 * 60 * 1000,
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
@@ -76,34 +79,28 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 };
 
 // 登出
-export const logout = async (req: Request, res: Response, next: NextFunction) => {
+export const logout = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
-    const userId = await getUserId(req);
-    const isSuccess = await handleLogout(userId);
-    if (isSuccess) {
-      res.clearCookie('access', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-      });
-      res.clearCookie('refresh', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-      });
-      res.status(200).json(ResponseModel.successResponse(null));
-    } else {
-      res.status(400).json(ResponseModel.errorResponse('發生錯誤', 400));
-    }
+    res.clearCookie('access', {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+    });
+    res.clearCookie('refresh', {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+    });
+    res.status(200).json(ResponseModel.successResponse(null));
   } catch (error) {
-    next(error);
+    res.status(200).json(ResponseModel.successResponse(null));
   }
 };
 // 忘記密碼
 // TODO: 未做
-export const forgetPassword = async (req: Request, res: Response, next: NextFunction) => {
+export const forgetPassword = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const { email } = req.body;
   } catch (error) {

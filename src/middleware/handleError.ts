@@ -18,6 +18,6 @@ const handleError = (err: any, req: Request, res: Response, next: NextFunction) 
     res.status(status).json(ResponseModel.errorResponse(message, errorCode));
     return;
   }
-  res.status(500).json(ResponseModel.errorResponse('伺服器發生錯誤，請稍後在試', 500));
+  res.status(500).json(ResponseModel.errorResponse('伺服器發生錯誤，請稍後再試', 500));
 };
 export default handleError;

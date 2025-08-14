@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import {
   handleGetSubjectWords,
   handleGetWordExample,
@@ -8,12 +8,14 @@ import {
   handleDeleteLearnedWord,
   handleGetLearnedWords,
   handleGetSubjectCategory,
+  handleGetLearnedWordCount,
 } from '../services/wordService';
 import ResponseModel from '../utils/response';
 import { getUserId } from '../utils';
+import type { RequestCustom } from '../types/index';
 
 //
-export const getSubjectCategory = async (req: Request, res: Response, next: NextFunction) => {
+export const getSubjectCategory = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const result = await handleGetSubjectCategory();
     res.status(200).json(ResponseModel.successResponse(result));
@@ -22,10 +24,10 @@ export const getSubjectCategory = async (req: Request, res: Response, next: Next
   }
 };
 // 取得主題單字
-export const getSubjectWords = async (req: Request, res: Response, next: NextFunction) => {
+export const getSubjectWords = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const subject = req.query.subject as string;
-    const userId = await getUserId(req);
+    const userId = getUserId(req);
     const result = await handleGetSubjectWords(subject, userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
@@ -34,7 +36,7 @@ export const getSubjectWords = async (req: Request, res: Response, next: NextFun
 };
 
 // 取得單字例句
-export const getWordExample = async (req: Request, res: Response, next: NextFunction) => {
+export const getWordExample = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const wordId = req.query.wordId as string;
     const result = await handleGetWordExample(wordId);
@@ -45,9 +47,9 @@ export const getWordExample = async (req: Request, res: Response, next: NextFunc
 };
 
 // 取得每日單字
-export const getDailyWords = async (req: Request, res: Response, next: NextFunction) => {
+export const getDailyWords = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
-    const userId = await getUserId(req);
+    const userId = getUserId(req);
     await handleGetDailyWords(userId);
   } catch (error) {
     next(error);
@@ -55,9 +57,9 @@ export const getDailyWords = async (req: Request, res: Response, next: NextFunct
 };
 
 // 確認是否拿過每日單字
-export const checkIsDaily = async (req: Request, res: Response, next: NextFunction) => {
+export const checkIsDaily = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
-    const userId = await getUserId(req);
+    const userId = getUserId(req);
     const isDaily = await checkDailyWordsTaken(userId);
     res.status(200).json(ResponseModel.successResponse(isDaily));
   } catch (error) {
@@ -66,10 +68,10 @@ export const checkIsDaily = async (req: Request, res: Response, next: NextFuncti
 };
 
 // 儲存已學過單字
-export const saveLearnedWord = async (req: Request, res: Response, next: NextFunction) => {
+export const saveLearnedWord = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const { wordId } = req.body;
-    const userId = await getUserId(req);
+    const userId = getUserId(req);
     await handleSaveLearnedWord(userId, wordId);
     res.status(200).json(ResponseModel.successResponse(null));
   } catch (error) {
@@ -78,10 +80,10 @@ export const saveLearnedWord = async (req: Request, res: Response, next: NextFun
 };
 
 // 刪除已學過單字
-export const deleteLearnedWord = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteLearnedWord = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const { wordId } = req.params;
-    const userId = await getUserId(req);
+    const userId = getUserId(req);
     await handleDeleteLearnedWord(userId, wordId);
     res.status(200).json(ResponseModel.successResponse(null));
   } catch (error) {
@@ -90,10 +92,34 @@ export const deleteLearnedWord = async (req: Request, res: Response, next: NextF
 };
 
 // 取得已學過單字
-export const getLearnedWords = async (req: Request, res: Response, next: NextFunction) => {
+export const getLearnedWords = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
-    const userId = await getUserId(req);
+    const userId = getUserId(req);
     const result = await handleGetLearnedWords(userId);
+    res.status(200).json(ResponseModel.successResponse(result));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 取得已學過單字(分頁)
+export const getLearnedWordsPage = async (req: RequestCustom, res: Response, next: NextFunction) => {
+  try {
+    const itemPerPage = req.query.itemPerPage as string;
+    const page = req.query.page as string;
+    const userId = getUserId(req);
+    const result = await handleGetLearnedWords(userId, +itemPerPage, +page);
+    res.status(200).json(ResponseModel.successResponse(result));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 取得已學過單字數量
+export const getLearnedWordCount = async (req: RequestCustom, res: Response, next: NextFunction) => {
+  try {
+    const userId = getUserId(req);
+    const result = await handleGetLearnedWordCount(userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);

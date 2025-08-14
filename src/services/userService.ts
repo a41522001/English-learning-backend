@@ -104,6 +104,7 @@ export const checkAccessToken = async (id: string): Promise<boolean> => {
 };
 
 // refresh token
+// TODO: 已棄用 之後要刪掉
 export const handleRefreshToken = async (req: Request): Promise<{ accessToken: string; refreshToken: string }> => {
   const cookieRefreshToken = req.cookies.refresh;
   if (!cookieRefreshToken) {

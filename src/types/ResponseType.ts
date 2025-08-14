@@ -31,3 +31,14 @@ export interface Userinfo {
   id: string;
   created_at: Date;
 }
+export interface LearnedWord {
+  wordId: string;
+  learnAt: Date;
+  word: string;
+  pronunciation?: string;
+  category: string;
+  categoryName: string;
+}
+export interface LearnedWordCount {
+  count: number;
+}

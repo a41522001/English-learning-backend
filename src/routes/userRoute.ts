@@ -6,6 +6,6 @@ router.post('/signup', signup);
 router.post('/login', login);
 router.post('/forgetPassword', forgetPassword);
 router.get('/userinfo', verifyToken, userinfo);
-router.get('/refresh', refreshToken);
+// router.get('/refresh', refreshToken);
 router.get('/logout', logout);
 export default router;

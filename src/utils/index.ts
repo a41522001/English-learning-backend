@@ -1,7 +1,7 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { env } from '../config/env';
-import type { DecodedToken, TokenOptions, TokenType } from '../types/index';
+import type { RequestCustom, DecodedToken, TokenOptions, TokenType } from '../types/index';
 import { Request } from 'express';
 import ApiError from '../models/errorModel';
 import axios, { AxiosPromise } from 'axios';
@@ -21,7 +21,8 @@ export const createAccessToken = (userId: string): string => {
   };
 
   const options: SignOptions = {
-    expiresIn: env.ACCESS_TOKEN_EXPIRE as StringValue,
+    // expiresIn: env.ACCESS_TOKEN_EXPIRE as StringValue,
+    expiresIn: '1m' as StringValue,
     algorithm: 'HS256',
   };
   const token = jwt.sign(payload, env.ACCESS_TOKEN_SECRET, options);
@@ -51,6 +52,7 @@ export const decodePassword = async (userPassword: string, hashPassword: string)
 };
 
 // 解密access token
+// TODO: 已棄用 之後要刪掉
 export const decodeAccessToken = (req: Request): Promise<DecodedToken> => {
   return new Promise((resolve, reject) => {
     const accessToken = req.cookies.access;
@@ -112,9 +114,9 @@ export const handleDeepLTranslator = async (origin: string) => {
   return result;
 };
 // 取得User ID
-export const getUserId = async (req: Request): Promise<string> => {
-  const { sub } = await decodeAccessToken(req);
-  return sub;
+export const getUserId = (req: RequestCustom): string => {
+  if (!req.userId) throw new ApiError('請重新登入', { statusCode: 401 });
+  return req.userId;
 };
 // 韋氏辭典
 export const getDictionary = (word: string) => {

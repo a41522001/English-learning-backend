@@ -1,5 +1,9 @@
 import { StringValue } from 'ms';
+import { Request } from 'express';
 
+export interface RequestCustom extends Request {
+  userId?: string;
+}
 export interface TokenOption {
   secret: string;
   expire: StringValue | number;

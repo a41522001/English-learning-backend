@@ -1,7 +1,7 @@
 import prisma from '../config/prisma';
 import { MappingPartOfSpeech } from '../types';
 import { handleGetDictionary, handleDeepLTranslator, getDictionary, getWordsAPI, getToday } from '../utils';
-import type { CheckDaily, SubjectCategory, WordExample, WordsSubject } from '../types/ResponseType';
+import type { CheckDaily, LearnedWord, LearnedWordCount, SubjectCategory, WordExample, WordsSubject } from '../types/ResponseType';
 import ApiError from '../models/errorModel';
 const mappingPartOfSpeech: MappingPartOfSpeech = {
   noun: '名詞',
@@ -243,7 +243,8 @@ export const handleDeleteLearnedWord = async (userId: string, wordId: string): P
 };
 
 // 取得已學單字
-export const handleGetLearnedWords = async (userId: string) => {
+export const handleGetLearnedWords = async (userId: string, itemPerPage?: number, page?: number): Promise<LearnedWord[]> => {
+  const skip = itemPerPage && page ? (page - 1) * itemPerPage : undefined;
   const res = await prisma.words_storage.findMany({
     select: {
       word_id: true,
@@ -271,7 +272,10 @@ export const handleGetLearnedWords = async (userId: string) => {
     orderBy: {
       learn_at: 'asc',
     },
+    skip: skip,
+    take: itemPerPage,
   });
+
   const result = res.map((item) => {
     const { word_id, learn_at, words } = item;
     const { word, pronunciation, category } = words;
@@ -279,12 +283,24 @@ export const handleGetLearnedWords = async (userId: string) => {
     const { title, subject } = category_setting;
     return {
       wordId: word_id,
-      learnAt: learn_at,
+      learnAt: learn_at!,
       word,
-      pronunciation,
+      pronunciation: pronunciation ?? '',
       category: subject,
       categoryName: title,
     };
   });
   return result;
+};
+
+// 取得已學單字數量
+export const handleGetLearnedWordCount = async (userId: string): Promise<LearnedWordCount> => {
+  const res = await prisma.words_storage.count({
+    where: {
+      user_id: userId,
+    },
+  });
+  return {
+    count: res,
+  };
 };

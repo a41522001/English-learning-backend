@@ -1,18 +1,121 @@
 import { Request, Response, NextFunction } from 'express';
-import { checkAccessToken } from '../services/userService';
-import { decodeAccessToken } from '../utils/index';
+import { v4 as uuidv4 } from 'uuid';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import ApiError from '../models/errorModel';
-const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
+import { checkAccessToken } from '../services/userService';
+import { RequestCustom, DecodedToken } from '../types';
+import { env } from '../config/env';
+import prisma from '../config/prisma';
+import { createAccessToken, generateRefreshTokenTime } from '../utils';
+
+const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction) => {
+  const cookieAccessToken = req.cookies?.access;
+  // 解access token
+  if (cookieAccessToken) {
+    try {
+      const { sub } = jwt.verify(cookieAccessToken, env.ACCESS_TOKEN_SECRET) as DecodedToken;
+      req.userId = sub;
+      return next();
+    } catch (error: any) {
+      if (error.name !== 'TokenExpiredError') {
+        res.clearCookie('access', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+        res.clearCookie('refresh', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+        return next(new ApiError('請重新登入', { statusCode: 401 }));
+      }
+    }
+  }
+
+  // 解fresh token
+  const cookieRefreshToken = req.cookies?.refresh;
+  if (!cookieRefreshToken) {
+    res.clearCookie('access', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    res.clearCookie('refresh', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    return next(new ApiError('請重新登入', { statusCode: 401 }));
+  }
+
+  const now = new Date();
   try {
-    const { sub } = await decodeAccessToken(req);
-    const isUserExist = await checkAccessToken(sub);
-    if (isUserExist) {
-      next();
+    // 查refresh token
+    const isRefreshTokenExist = await prisma.token.findFirst({
+      where: {
+        refresh_token: cookieRefreshToken,
+        expired_at: {
+          gt: now,
+        },
+      },
+    });
+    if (isRefreshTokenExist) {
+      const refreshToken = uuidv4();
+      const expireTime = generateRefreshTokenTime();
+      const oldExpiredAt = new Date(Date.now() + 15_000); // 15s
+      const userId = isRefreshTokenExist.user_id;
+
+      const { count } = await prisma.token.updateMany({
+        where: {
+          user_id: userId,
+          refresh_token: cookieRefreshToken,
+          expired_at: { gt: now },
+        },
+        data: {
+          refresh_token: refreshToken,
+          expired_at: expireTime,
+          old_refresh_token: cookieRefreshToken,
+          old_expired_at: oldExpiredAt,
+        },
+      });
+
+      if (count === 1) {
+        const accessToken = createAccessToken(userId);
+        res.cookie('access', accessToken, {
+          maxAge: 15 * 60 * 1000,
+          httpOnly: true,
+          secure: false,
+          sameSite: 'lax',
+          path: '/',
+        });
+        res.cookie('refresh', refreshToken, {
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          httpOnly: true,
+          secure: false,
+          sameSite: 'lax',
+          path: '/',
+        });
+        req.userId = userId;
+        return next();
+      }
+    }
+
+    // 查舊的refresh token
+    const isOldRefreshTokenExist = await prisma.token.findFirst({
+      where: {
+        old_refresh_token: cookieRefreshToken,
+        old_expired_at: {
+          gt: now,
+        },
+      },
+    });
+    if (isOldRefreshTokenExist) {
+      const userId = isOldRefreshTokenExist.user_id;
+      const accessToken = createAccessToken(userId);
+      res.cookie('access', accessToken, {
+        maxAge: 15 * 60 * 1000,
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      });
+      req.userId = userId;
+      return next();
     } else {
-      throw new ApiError('找不到此使用者', { statusCode: 401, errorCode: 400 });
+      res.clearCookie('access', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+      res.clearCookie('refresh', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+      return next(new ApiError('請重新登入', { statusCode: 401 }));
     }
   } catch (error) {
-    next(error);
+    res.clearCookie('access', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    res.clearCookie('refresh', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    return next(new ApiError('請重新登入', { statusCode: 401 }));
   }
 };
+
 export default verifyToken;
