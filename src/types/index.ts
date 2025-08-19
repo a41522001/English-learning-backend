@@ -44,3 +44,14 @@ export interface MappingPartOfSpeech {
   interjection: string;
   ordinal: string;
 }
+export interface WordQueryResult {
+  id: string;
+  word: string;
+  pronunciation: string | null;
+  category: {
+    category_setting: {
+      title: string;
+      subject: string;
+    };
+  } | null;
+}

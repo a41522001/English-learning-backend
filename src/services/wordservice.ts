@@ -1,5 +1,5 @@
 import prisma from '../config/prisma';
-import { MappingPartOfSpeech } from '../types';
+import { MappingPartOfSpeech, WordQueryResult } from '../types';
 import { handleGetDictionary, handleDeepLTranslator, getDictionary, getWordsAPI, getToday } from '../utils';
 import type { CheckDaily, LearnedWord, LearnedWordCount, SubjectCategory, WordExample, WordsSubject } from '../types/ResponseType';
 import ApiError from '../models/errorModel';
@@ -19,6 +19,44 @@ const mappingPartOfSpeech: MappingPartOfSpeech = {
   particle: '助詞',
   interjection: '感嘆詞',
   ordinal: '序數詞',
+};
+
+// 隨機創建主題
+const handleRandomSubject = (subjects: string[]): string => {
+  const index = Math.floor(Math.random() * subjects.length);
+  return subjects[index];
+};
+
+// 尋找主題單字
+const findSubjectWords = async (userId: string, sub: string, take: number) => {
+  return await prisma.words.findMany({
+    select: {
+      id: true,
+      word: true,
+      pronunciation: true,
+      category: {
+        select: {
+          category_setting: {
+            select: {
+              title: true,
+              subject: true,
+            },
+          },
+        },
+      },
+    },
+    where: {
+      words_storage: {
+        none: {
+          user_id: userId,
+        },
+      },
+      category: {
+        subject: sub,
+      },
+    },
+    take: take,
+  });
 };
 
 // 取得主題類別
@@ -45,41 +83,45 @@ export const handleGetSubjectWords = async (subject: string, userId: string): Pr
   if (isDaily || !subject) {
     return handleGetDailyWords(userId);
   }
-
   const wordIds: string[] = [];
   const data: WordsSubject[] = [];
-  let wordCount = 10;
-  // TODO: 之後要改查詢方式 判斷result夠不夠10個沒有的話要繼續查 再沒有的話從別的類別查
-  const result = await prisma.words.findMany({
-    select: {
-      id: true,
-      word: true,
-      pronunciation: true,
-      category: {
-        select: {
-          category_setting: {
-            select: {
-              title: true,
-              subject: true,
-            },
-          },
-        },
-      },
-    },
-    where: {
-      words_storage: {
-        none: {
-          user_id: userId,
-        },
-      },
-      category: {
-        subject: subject,
-      },
-    },
-    take: wordCount,
-  });
+  // 單字筆數
+  const WORD_COUNT = 10;
+  // 總主題
+  const totalSubject = await handleGetSubjectCategory();
+  // 剩下的主題
+  let subjects = totalSubject.map((item) => item.subject).filter((item) => item !== subject);
+  // 可嘗試次數(避免無限while)
+  let attempts = totalSubject.length + 1;
+  // 當前主題
+  let currentSubject = subject;
+  // 用來存放查找完的單字
+  let result: WordQueryResult[] = [];
 
-  result.forEach((item) => {
+  do {
+    // 需要的筆數
+    const needCount = WORD_COUNT - result.length;
+    if (needCount === 0) {
+      break;
+    }
+    if (!currentSubject && subjects.length === 0) {
+      break;
+    }
+
+    const res = await findSubjectWords(userId, currentSubject, needCount);
+    result.push(...res);
+    currentSubject = handleRandomSubject(subjects);
+    // 扣除當前的主題
+    subjects = subjects.filter((item) => item !== currentSubject);
+    // 扣除嘗試次數
+    attempts -= 1;
+  } while (result.length < WORD_COUNT && attempts > 0);
+
+  if (result.length !== WORD_COUNT) {
+    throw new ApiError('伺服器錯誤請稍後再試', { statusCode: 500 });
+  }
+
+  result.forEach((item: WordQueryResult) => {
     const { id, word, pronunciation, category } = item;
     const { category_setting } = category!;
     const { title, subject } = category_setting;
