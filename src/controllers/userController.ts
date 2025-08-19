@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { handleSignup, handleLogin, getUserinfo, handleRefreshToken, handleLogout } from '../services/userService';
+import { handleSignup, handleLogin, getUserinfo, handleLogout } from '../services/userService';
 import ResponseModel from '../utils/response';
 import { getUserId } from '../utils/index';
 import type { RequestCustom } from '../types/index';
@@ -47,33 +47,6 @@ export const userinfo = async (req: RequestCustom, res: Response, next: NextFunc
     const result = await getUserinfo(userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
-    next(error);
-  }
-};
-
-// refresh token
-// TODO: 已棄用 之後要刪掉
-export const refreshToken = async (req: RequestCustom, res: Response, next: NextFunction) => {
-  try {
-    const { accessToken, refreshToken } = await handleRefreshToken(req);
-    res.cookie('access', accessToken, {
-      // maxAge: 15 * 60 * 1000,
-      maxAge: 1 * 60 * 1000,
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-    });
-    res.cookie('refresh', refreshToken, {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-    });
-    res.status(200).json(ResponseModel.successResponse(null));
-  } catch (error) {
-    // TODO: 這邊如果噴錯需要清掉cookie
     next(error);
   }
 };

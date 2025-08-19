@@ -38,6 +38,7 @@ export interface LearnedWord {
   pronunciation?: string;
   category: string;
   categoryName: string;
+  favorite: boolean;
 }
 export interface LearnedWordCount {
   count: number;

@@ -103,53 +103,8 @@ export const checkAccessToken = async (id: string): Promise<boolean> => {
   return isUserExist;
 };
 
-// refresh token
-// TODO: 已棄用 之後要刪掉
-export const handleRefreshToken = async (req: Request): Promise<{ accessToken: string; refreshToken: string }> => {
-  const cookieRefreshToken = req.cookies.refresh;
-  if (!cookieRefreshToken) {
-    throw new ApiError('缺少 Refresh Token', { statusCode: 401, errorCode: 403 });
-  }
-  // 查詢user和token是否符合
-  const isUserExist = await prisma.token.findFirst({
-    where: {
-      refresh_token: cookieRefreshToken,
-      expired_at: {
-        gt: new Date(),
-      },
-    },
-  });
-
-  // 如果存在刷新token
-  if (isUserExist) {
-    const expireTime = generateRefreshTokenTime();
-    const userId = isUserExist.user_id;
-    const refreshToken = uuidv4();
-    await prisma.token.upsert({
-      where: {
-        user_id: userId,
-      },
-      update: {
-        refresh_token: refreshToken,
-        expired_at: expireTime,
-      },
-      create: {
-        user_id: userId,
-        refresh_token: refreshToken,
-        expired_at: expireTime,
-      },
-    });
-    const accessToken = createAccessToken(userId);
-    return {
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-    };
-  } else {
-    throw new ApiError('找不到使用者，請重新登入', { statusCode: 401, errorCode: 403 });
-  }
-};
-
 // 登出
+// TODO: 已棄用
 export const handleLogout = async (userId: string): Promise<boolean> => {
   const isSuccess = await prisma.token.delete({
     where: {

@@ -51,29 +51,10 @@ export const decodePassword = async (userPassword: string, hashPassword: string)
   return isPasswordExist;
 };
 
-// 解密access token
-// TODO: 已棄用 之後要刪掉
-export const decodeAccessToken = (req: Request): Promise<DecodedToken> => {
-  return new Promise((resolve, reject) => {
-    const accessToken = req.cookies.access;
-
-    if (!accessToken) {
-      return reject(new ApiError('無攜帶token', { statusCode: 401 }));
-    }
-    jwt.verify(accessToken, env.ACCESS_TOKEN_SECRET, (err: any, decoded: any) => {
-      if (err) {
-        if (err.name === 'TokenExpiredError') {
-          reject(new ApiError('Token已過期', { statusCode: 401 }));
-        } else if (err.name === 'JsonWebTokenError') {
-          reject(new ApiError('請重新登入', { statusCode: 401, errorCode: 403 }));
-        } else {
-          reject(new Error());
-        }
-        return;
-      }
-      resolve(decoded as DecodedToken);
-    });
-  });
+// 取得User ID
+export const getUserId = (req: RequestCustom): string => {
+  if (!req.userId) throw new ApiError('請重新登入', { statusCode: 401 });
+  return req.userId;
 };
 
 // Dictionary API
@@ -106,6 +87,7 @@ export const handleGetDictionary = async (word: string) => {
     return { ok: false, word, reason: 'NETWORK', error: error };
   }
 };
+
 // deepL API
 export const handleDeepLTranslator = async (origin: string) => {
   const authKey = env.DEEPL_API_KEY;
@@ -113,11 +95,7 @@ export const handleDeepLTranslator = async (origin: string) => {
   const result = await translator.translateText(origin, 'en', 'zh-HANT');
   return result;
 };
-// 取得User ID
-export const getUserId = (req: RequestCustom): string => {
-  if (!req.userId) throw new ApiError('請重新登入', { statusCode: 401 });
-  return req.userId;
-};
+
 // 韋氏辭典
 export const getDictionary = (word: string) => {
   const dictionaryURL = env.MERRIAM_WEBSTER_URL;
@@ -125,6 +103,7 @@ export const getDictionary = (word: string) => {
   const API_URL = `${dictionaryURL.replace('{}', word)}?key=${dictionaryAPIKEY}`;
   return axios.get(API_URL);
 };
+
 // WORDS_API
 export const getWordsAPI = (word: string) => {
   const wordsURL = env.WORDS_API_URL.replace('{}', word);
@@ -140,6 +119,7 @@ export const getWordsAPI = (word: string) => {
   };
   return axios.request(options);
 };
+
 // 取得今日日期
 // YYYYMMDD
 export const getToday = () => convertDate(new Date());

@@ -9,6 +9,8 @@ import {
   handleGetLearnedWords,
   handleGetSubjectCategory,
   handleGetLearnedWordCount,
+  handleChangeFavorite,
+  handleGetFavorite,
 } from '../services/wordService';
 import ResponseModel from '../utils/response';
 import { getUserId } from '../utils';
@@ -120,6 +122,29 @@ export const getLearnedWordCount = async (req: RequestCustom, res: Response, nex
   try {
     const userId = getUserId(req);
     const result = await handleGetLearnedWordCount(userId);
+    res.status(200).json(ResponseModel.successResponse(result));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 改變我的最愛狀態
+export const changeFavorite = async (req: RequestCustom, res: Response, next: NextFunction) => {
+  try {
+    const { wordId, status } = req.body;
+    const userId = getUserId(req);
+    await handleChangeFavorite(userId, wordId, status);
+    res.status(200).json(ResponseModel.successResponse(null));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 取得我的最愛單字
+export const getFavorite = async (req: RequestCustom, res: Response, next: NextFunction) => {
+  try {
+    const userId = getUserId(req);
+    const result = await handleGetFavorite(userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);

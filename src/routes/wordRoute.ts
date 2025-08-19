@@ -9,6 +9,8 @@ import {
   getSubjectCategory,
   getLearnedWordsPage,
   getLearnedWordCount,
+  changeFavorite,
+  getFavorite,
 } from '../controllers/wordController';
 const router = Router();
 
@@ -21,4 +23,6 @@ router.delete('/learnedWord/:wordId', deleteLearnedWord);
 router.get('/learnedWords', getLearnedWords);
 router.get('/learnedWordsPage', getLearnedWordsPage);
 router.get('/learnedWordCount', getLearnedWordCount);
+router.patch('/favorite', changeFavorite);
+router.get('/favoriteWord', getFavorite);
 export default router;

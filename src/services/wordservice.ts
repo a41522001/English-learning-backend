@@ -249,6 +249,7 @@ export const handleGetLearnedWords = async (userId: string, itemPerPage?: number
     select: {
       word_id: true,
       learn_at: true,
+      favorite: true,
       words: {
         select: {
           word: true,
@@ -277,11 +278,12 @@ export const handleGetLearnedWords = async (userId: string, itemPerPage?: number
   });
 
   const result = res.map((item) => {
-    const { word_id, learn_at, words } = item;
+    const { word_id, learn_at, words, favorite } = item;
     const { word, pronunciation, category } = words;
     const { category_setting } = category!;
     const { title, subject } = category_setting;
     return {
+      favorite,
       wordId: word_id,
       learnAt: learn_at!,
       word,
@@ -303,4 +305,43 @@ export const handleGetLearnedWordCount = async (userId: string): Promise<Learned
   return {
     count: res,
   };
+};
+
+// 改變我的最愛狀態
+export const handleChangeFavorite = async (userId: string, wordId: string, status: boolean): Promise<void> => {
+  await prisma.words_storage.updateMany({
+    where: {
+      user_id: userId,
+      word_id: wordId,
+    },
+    data: {
+      favorite: status,
+    },
+  });
+};
+
+// 取得我的最愛單字
+export const handleGetFavorite = async (userId: string) => {
+  const result = await prisma.words_storage.findMany({
+    select: {
+      words: {
+        select: {
+          word: true,
+          id: true,
+          pronunciation: true,
+        },
+      },
+    },
+    where: {
+      user_id: userId,
+      favorite: true,
+    },
+  });
+
+  return result.map((item) => {
+    return {
+      ...item.words,
+      pronunciation: item.words.pronunciation ?? '',
+    };
+  });
 };
