@@ -56,7 +56,7 @@ export const handleLogin = async (email: string, password: string): Promise<Logi
           expired_at: expireTime,
         },
       });
-      const accessToken = createAccessToken(user.id);
+      const accessToken = createAccessToken(user.sub);
       const { isDaily } = await checkDailyWordsTaken(user.id);
 
       return {

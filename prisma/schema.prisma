@@ -31,6 +31,7 @@ model token {
 
 model users {
   id            String          @id @db.Char(36)
+  sub           String          @unique(map: "sub") @default(dbgenerated("(uuid())")) @db.Char(36)
   username      String          @db.VarChar(30)
   email         String          @unique(map: "email_UNIQUE") @db.VarChar(100)
   password      String          @db.VarChar(80)

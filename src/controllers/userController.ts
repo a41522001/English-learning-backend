@@ -3,6 +3,7 @@ import { handleSignup, handleLogin, getUserinfo, handleLogout } from '../service
 import ResponseModel from '../utils/response';
 import { getUserId } from '../utils/index';
 import type { RequestCustom } from '../types/index';
+import { clearCookie } from '../utils/cookie';
 
 // 註冊
 export const signup = async (req: RequestCustom, res: Response, next: NextFunction) => {
@@ -54,18 +55,7 @@ export const userinfo = async (req: RequestCustom, res: Response, next: NextFunc
 // 登出
 export const logout = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
-    res.clearCookie('access', {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-    });
-    res.clearCookie('refresh', {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-    });
+    clearCookie(res);
     res.status(200).json(ResponseModel.successResponse(null));
   } catch (error) {
     res.status(200).json(ResponseModel.successResponse(null));

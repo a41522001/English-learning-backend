@@ -7,19 +7,35 @@ import { RequestCustom, DecodedToken } from '../types';
 import { env } from '../config/env';
 import prisma from '../config/prisma';
 import { createAccessToken, generateRefreshTokenTime } from '../utils';
-
+import { clearCookie } from '../utils/cookie';
 const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction) => {
   const cookieAccessToken = req.cookies?.access;
   // 解access token
   if (cookieAccessToken) {
     try {
-      const { sub } = jwt.verify(cookieAccessToken, env.ACCESS_TOKEN_SECRET) as DecodedToken;
-      req.userId = sub;
-      return next();
+      const { sub } = jwt.verify(cookieAccessToken, env.ACCESS_TOKEN_SECRET, {
+        algorithms: ['HS256'],
+        issuer: env.API_URL,
+      }) as DecodedToken;
+
+      const user = await prisma.users.findUnique({
+        select: {
+          id: true,
+        },
+        where: {
+          sub: sub,
+        },
+      });
+
+      if (user) {
+        req.userId = user.id;
+        return next();
+      }
+      clearCookie(res);
+      return next(new ApiError('請重新登入', { statusCode: 401 }));
     } catch (error: any) {
       if (error.name !== 'TokenExpiredError') {
-        res.clearCookie('access', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
-        res.clearCookie('refresh', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+        clearCookie(res);
         return next(new ApiError('請重新登入', { statusCode: 401 }));
       }
     }
@@ -28,28 +44,33 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
   // 解fresh token
   const cookieRefreshToken = req.cookies?.refresh;
   if (!cookieRefreshToken) {
-    res.clearCookie('access', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
-    res.clearCookie('refresh', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    clearCookie(res);
     return next(new ApiError('請重新登入', { statusCode: 401 }));
   }
 
   const now = new Date();
   try {
     // 查refresh token
-    const isRefreshTokenExist = await prisma.token.findFirst({
+    const isRefreshTokenExist = await prisma.users.findFirst({
+      select: {
+        sub: true,
+        token: true,
+      },
       where: {
-        refresh_token: cookieRefreshToken,
-        expired_at: {
-          gt: now,
+        token: {
+          refresh_token: cookieRefreshToken,
+          expired_at: {
+            gt: now,
+          },
         },
       },
     });
-    if (isRefreshTokenExist) {
+    if (isRefreshTokenExist && isRefreshTokenExist.token) {
+      const { sub, token: tokenTable } = isRefreshTokenExist;
       const refreshToken = uuidv4();
       const expireTime = generateRefreshTokenTime();
       const oldExpiredAt = new Date(Date.now() + 15_000); // 15s
-      const userId = isRefreshTokenExist.user_id;
-
+      const userId = tokenTable.user_id;
       const { count } = await prisma.token.updateMany({
         where: {
           user_id: userId,
@@ -65,7 +86,7 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
       });
 
       if (count === 1) {
-        const accessToken = createAccessToken(userId);
+        const accessToken = createAccessToken(sub);
         res.cookie('access', accessToken, {
           maxAge: 15 * 60 * 1000,
           httpOnly: true,
@@ -96,24 +117,26 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
     });
     if (isOldRefreshTokenExist) {
       const userId = isOldRefreshTokenExist.user_id;
-      const accessToken = createAccessToken(userId);
-      res.cookie('access', accessToken, {
-        maxAge: 15 * 60 * 1000,
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-      });
-      req.userId = userId;
-      return next();
-    } else {
-      res.clearCookie('access', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
-      res.clearCookie('refresh', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+      const user = await prisma.users.findUnique({ where: { id: userId }, select: { sub: true } });
+      if (user) {
+        const accessToken = createAccessToken(user.sub);
+        res.cookie('access', accessToken, {
+          maxAge: 15 * 60 * 1000,
+          httpOnly: true,
+          secure: false,
+          sameSite: 'lax',
+          path: '/',
+        });
+        req.userId = userId;
+        return next();
+      }
+      clearCookie(res);
       return next(new ApiError('請重新登入', { statusCode: 401 }));
     }
+    clearCookie(res);
+    return next(new ApiError('請重新登入', { statusCode: 401 }));
   } catch (error) {
-    res.clearCookie('access', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
-    res.clearCookie('refresh', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    clearCookie(res);
     return next(new ApiError('請重新登入', { statusCode: 401 }));
   }
 };

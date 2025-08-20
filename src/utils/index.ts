@@ -2,7 +2,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { env } from '../config/env';
 import type { RequestCustom, DecodedToken, TokenOptions, TokenType } from '../types/index';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import ApiError from '../models/errorModel';
 import axios, { AxiosPromise } from 'axios';
 import * as deepl from 'deepl-node';
@@ -13,19 +13,15 @@ import type { StringValue } from 'ms';
  * @param {string} userId - user.id
  * @returns {string} token
  */
-export const createAccessToken = (userId: string): string => {
-  const payload = {
-    issuer: env.API_URL,
-    sub: userId,
-    jti: createHash('sha256').update(randomUUID()).digest('hex'),
-  };
-
+export const createAccessToken = (sub: string): string => {
   const options: SignOptions = {
-    // expiresIn: env.ACCESS_TOKEN_EXPIRE as StringValue,
-    expiresIn: '1m' as StringValue,
+    issuer: env.API_URL,
+    subject: sub,
+    jwtid: createHash('sha256').update(randomUUID()).digest('hex'),
+    expiresIn: '15m' as StringValue,
     algorithm: 'HS256',
   };
-  const token = jwt.sign(payload, env.ACCESS_TOKEN_SECRET, options);
+  const token = jwt.sign({}, env.ACCESS_TOKEN_SECRET, options);
   return token;
 };
 
