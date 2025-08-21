@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { signup, login, userinfo, forgetPassword, logout } from '../controllers/userController';
 import verifyToken from '../middleware/verifyToken';
+import limiter from '../middleware/rateLimit';
 const router = Router();
-router.post('/signup', signup);
-router.post('/login', login);
+router.post('/signup', limiter, signup);
+router.post('/login', limiter, login);
 router.post('/forgetPassword', forgetPassword);
 router.get('/userinfo', verifyToken, userinfo);
 router.get('/logout', logout);

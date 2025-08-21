@@ -1,8 +1,7 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { env } from '../config/env';
-import type { RequestCustom, DecodedToken, TokenOptions, TokenType } from '../types/index';
-import { Request, Response } from 'express';
+import type { RequestCustom } from '../types/index';
 import ApiError from '../models/errorModel';
 import axios, { AxiosPromise } from 'axios';
 import * as deepl from 'deepl-node';
@@ -10,19 +9,33 @@ import { createHash, randomUUID } from 'crypto';
 import type { StringValue } from 'ms';
 /**
  * 創建Token
- * @param {string} userId - user.id
- * @returns {string} token
+ * @param {string} sub - users.sub
+ * @returns {string} JWT access token
  */
 export const createAccessToken = (sub: string): string => {
   const options: SignOptions = {
     issuer: env.API_URL,
     subject: sub,
     jwtid: createHash('sha256').update(randomUUID()).digest('hex'),
-    expiresIn: '15m' as StringValue,
+    // expiresIn: '15m' as StringValue,
+    expiresIn: env.ACCESS_TOKEN_EXPIRE.toString() as StringValue,
     algorithm: 'HS256',
   };
   const token = jwt.sign({}, env.ACCESS_TOKEN_SECRET, options);
   return token;
+};
+
+/**
+ * 產生 refresh token 的到期時間
+ *
+ * 計算方式：以現在時間為基準，往後加上設定的天數（env.REFRESH_TOKEN_EXPIRE）
+ * @returns {Date} refresh token 的到期時間（Date 物件）
+ */
+export const generateRefreshTokenTime = (): Date => {
+  const days = +env.REFRESH_TOKEN_EXPIRE;
+  const expireDate = new Date();
+  expireDate.setDate(expireDate.getDate() + days);
+  return expireDate;
 };
 
 /**
@@ -47,85 +60,90 @@ export const decodePassword = async (userPassword: string, hashPassword: string)
   return isPasswordExist;
 };
 
-// 取得User ID
+/**
+ * 從自訂的 Request 物件中取得使用者 ID
+ *
+ * @param {RequestCustom} req - 擴充過的 Express Request 物件，應包含 userId
+ * @throws {ApiError} 當 userId 不存在時，拋出 401 未授權錯誤
+ * @returns {string} 使用者的 ID
+ */
 export const getUserId = (req: RequestCustom): string => {
   if (!req.userId) throw new ApiError('請重新登入', { statusCode: 401 });
   return req.userId;
 };
 
-// Dictionary API
-export const handleGetDictionary = async (word: string) => {
-  const dictionaryURL = env.DICTIONARY_API_KEY;
-  try {
-    const res = await axios(`${dictionaryURL}${word}`);
-    const result = res.data.map((item: any) => {
-      const { word, phonetic, phonetics, meanings } = item;
-      const mean = meanings[0];
-      return {
-        word,
-        phonetic,
-        pronounce: phonetics[0]?.audio ?? '',
-        mean: mean?.partOfSpeech ?? '',
-        definition: mean?.definitions[0]?.definition ?? '',
-        example: mean?.definitions[0]?.example ?? '',
-      };
-    });
-    // console.dir(res.data, {
-    //   depth: null, // null = 不限制深度
-    // });
-    // console.log(result);
-
-    return { ok: true, word, result };
-  } catch (error: any) {
-    if (axios.isAxiosError(error) && error.response?.status && error.response.data.title === 'No Definitions Found') {
-      return { ok: false, word, reason: 'NOT_FOUND', error: error };
-    }
-    return { ok: false, word, reason: 'NETWORK', error: error };
-  }
-};
-
-// deepL API
-export const handleDeepLTranslator = async (origin: string) => {
-  const authKey = env.DEEPL_API_KEY;
-  const translator = new deepl.Translator(authKey);
-  const result = await translator.translateText(origin, 'en', 'zh-HANT');
-  return result;
-};
-
-// 韋氏辭典
-export const getDictionary = (word: string) => {
-  const dictionaryURL = env.MERRIAM_WEBSTER_URL;
-  const dictionaryAPIKEY = env.MERRIAM_WEBSTER_API_KEY;
-  const API_URL = `${dictionaryURL.replace('{}', word)}?key=${dictionaryAPIKEY}`;
-  return axios.get(API_URL);
-};
-
-// WORDS_API
-export const getWordsAPI = (word: string) => {
-  const wordsURL = env.WORDS_API_URL.replace('{}', word);
-  const wordsAPIKEY = env.WORDS_API_KEY;
-  const wordsHOST = env.WORDS_API_HOST;
-  const options = {
-    method: 'GET',
-    url: wordsURL,
-    headers: {
-      'x-rapidapi-key': wordsAPIKEY,
-      'x-rapidapi-host': wordsHOST,
-    },
-  };
-  return axios.request(options);
-};
-
-// 取得今日日期
-// YYYYMMDD
+/**
+ * 取得今日日期（格式：YYYYMMDD）
+ * @returns {string} 例如 "20250820"
+ */
 export const getToday = () => convertDate(new Date());
-// 轉換日期
-// ISO時間轉YYYYMMDD
+
+/**
+ * 將 Date 物件轉換為字串（格式：YYYYMMDD）
+ * @param {Date} date - 要轉換的日期物件
+ * @returns {string} 轉換後的日期字串，例如 "20250820"
+ */
 export const convertDate = (date: Date) => date.toISOString().slice(0, 10).replace(/-/g, '');
-// 產生refresh token到期時間
-export const generateRefreshTokenTime = (): Date => {
-  const days = +env.REFRESH_TOKEN_EXPIRE;
-  const expireDate = new Date();
-  expireDate.setDate(expireDate.getDate() + days);
-  return expireDate;
-};
+
+// // Dictionary API
+// export const handleGetDictionary = async (word: string) => {
+//   const dictionaryURL = env.DICTIONARY_API_KEY;
+//   try {
+//     const res = await axios(`${dictionaryURL}${word}`);
+//     const result = res.data.map((item: any) => {
+//       const { word, phonetic, phonetics, meanings } = item;
+//       const mean = meanings[0];
+//       return {
+//         word,
+//         phonetic,
+//         pronounce: phonetics[0]?.audio ?? '',
+//         mean: mean?.partOfSpeech ?? '',
+//         definition: mean?.definitions[0]?.definition ?? '',
+//         example: mean?.definitions[0]?.example ?? '',
+//       };
+//     });
+//     // console.dir(res.data, {
+//     //   depth: null, // null = 不限制深度
+//     // });
+//     // console.log(result);
+
+//     return { ok: true, word, result };
+//   } catch (error: any) {
+//     if (axios.isAxiosError(error) && error.response?.status && error.response.data.title === 'No Definitions Found') {
+//       return { ok: false, word, reason: 'NOT_FOUND', error: error };
+//     }
+//     return { ok: false, word, reason: 'NETWORK', error: error };
+//   }
+// };
+
+// // deepL API
+// export const handleDeepLTranslator = async (origin: string) => {
+//   const authKey = env.DEEPL_API_KEY;
+//   const translator = new deepl.Translator(authKey);
+//   const result = await translator.translateText(origin, 'en', 'zh-HANT');
+//   return result;
+// };
+
+// // 韋氏辭典 API
+// export const getDictionary = (word: string) => {
+//   const dictionaryURL = env.MERRIAM_WEBSTER_URL;
+//   const dictionaryAPIKEY = env.MERRIAM_WEBSTER_API_KEY;
+//   const API_URL = `${dictionaryURL.replace('{}', word)}?key=${dictionaryAPIKEY}`;
+//   return axios.get(API_URL);
+// };
+
+// // WORDS_API
+// export const getWordsAPI = (word: string) => {
+//   const wordsURL = env.WORDS_API_URL.replace('{}', word);
+//   const wordsAPIKEY = env.WORDS_API_KEY;
+//   const wordsHOST = env.WORDS_API_HOST;
+//   const options = {
+//     method: 'GET',
+//     url: wordsURL,
+//     headers: {
+//       'x-rapidapi-key': wordsAPIKEY,
+//       'x-rapidapi-host': wordsHOST,
+//     },
+//   };
+//   return axios.request(options);
+// };

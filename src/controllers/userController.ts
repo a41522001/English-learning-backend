@@ -4,6 +4,7 @@ import ResponseModel from '../utils/response';
 import { getUserId } from '../utils/index';
 import type { RequestCustom } from '../types/index';
 import { clearCookie } from '../utils/cookie';
+import ApiError from '../models/errorModel';
 
 // 註冊
 export const signup = async (req: RequestCustom, res: Response, next: NextFunction) => {

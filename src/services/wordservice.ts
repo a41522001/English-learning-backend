@@ -1,6 +1,5 @@
 import prisma from '../config/prisma';
 import { MappingPartOfSpeech, WordQueryResult } from '../types';
-import { handleGetDictionary, handleDeepLTranslator, getDictionary, getWordsAPI, getToday } from '../utils';
 import type { CheckDaily, LearnedWord, LearnedWordCount, SubjectCategory, WordExample, WordsSubject } from '../types/ResponseType';
 import ApiError from '../models/errorModel';
 const mappingPartOfSpeech: MappingPartOfSpeech = {
