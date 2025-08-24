@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { env } from '../config/env';
 export const cookieBase = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -7,6 +8,7 @@ export const cookieBase = {
 } as const;
 // 清cookie
 export const clearCookie = (res: Response): void => {
-  res.clearCookie('access', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
-  res.clearCookie('refresh', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+  const isProduction = env.NODE_ENVIRONMENT === 'production';
+  res.clearCookie('access', { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax', path: '/' });
+  res.clearCookie('refresh', { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax', path: '/' });
 };

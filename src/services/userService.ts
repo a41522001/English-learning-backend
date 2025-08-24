@@ -7,6 +7,7 @@ import { Request } from 'express';
 import { checkDailyWordsTaken } from './wordService';
 import { Userinfo } from '../types/ResponseType';
 import { env } from '../config/env';
+
 // 註冊
 export const handleSignup = async (username: string, email: string, password: string): Promise<void> => {
   const bcryptPassword = await saltPassword(password);

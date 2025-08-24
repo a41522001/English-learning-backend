@@ -10,6 +10,7 @@ import { createAccessToken, generateRefreshTokenTime } from '../utils';
 import { clearCookie } from '../utils/cookie';
 const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction) => {
   const cookieAccessToken = req.cookies?.access;
+  const isProduction = env.NODE_ENVIRONMENT === 'production';
   // 解access token
   if (cookieAccessToken) {
     try {
@@ -90,15 +91,15 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
         res.cookie('access', accessToken, {
           maxAge: 15 * 60 * 1000,
           httpOnly: true,
-          secure: false,
-          sameSite: 'lax',
+          secure: isProduction,
+          sameSite: isProduction ? 'none' : 'lax',
           path: '/',
         });
         res.cookie('refresh', refreshToken, {
           maxAge: 7 * 24 * 60 * 60 * 1000,
           httpOnly: true,
-          secure: false,
-          sameSite: 'lax',
+          secure: isProduction,
+          sameSite: isProduction ? 'none' : 'lax',
           path: '/',
         });
         req.userId = userId;
@@ -123,8 +124,8 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
         res.cookie('access', accessToken, {
           maxAge: 15 * 60 * 1000,
           httpOnly: true,
-          secure: false,
-          sameSite: 'lax',
+          secure: isProduction,
+          sameSite: isProduction ? 'none' : 'lax',
           path: '/',
         });
         req.userId = userId;

@@ -21,6 +21,6 @@ app.use(cookieParser());
 app.use('/api/user', user);
 app.use('/api/word', verifyToken, word);
 app.use(handleError);
-app.listen(env.PORT, () => {
+app.listen(env.PORT, '0.0.0.0', () => {
   console.log(env.PORT);
 });
