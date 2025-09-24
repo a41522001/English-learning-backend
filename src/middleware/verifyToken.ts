@@ -7,10 +7,9 @@ import { RequestCustom, DecodedToken } from '../types';
 import { env } from '../config/env';
 import prisma from '../config/prisma';
 import { createAccessToken, generateRefreshTokenTime } from '../utils';
-import { clearCookie } from '../utils/cookie';
+import { clearAuthCookies, getCookieOptions } from '../utils/cookie';
 const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction) => {
   const cookieAccessToken = req.cookies?.access;
-  const isProduction = env.NODE_ENVIRONMENT === 'production';
   // 解access token
   if (cookieAccessToken) {
     try {
@@ -32,11 +31,11 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
         req.userId = user.id;
         return next();
       }
-      clearCookie(res);
+      clearAuthCookies(res);
       return next(new ApiError('請重新登入', { statusCode: 401 }));
     } catch (error: any) {
       if (error.name !== 'TokenExpiredError') {
-        clearCookie(res);
+        clearAuthCookies(res);
         return next(new ApiError('請重新登入', { statusCode: 401 }));
       }
     }
@@ -45,7 +44,7 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
   // 解fresh token
   const cookieRefreshToken = req.cookies?.refresh;
   if (!cookieRefreshToken) {
-    clearCookie(res);
+    clearAuthCookies(res);
     return next(new ApiError('請重新登入', { statusCode: 401 }));
   }
 
@@ -90,17 +89,11 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
         const accessToken = createAccessToken(sub);
         res.cookie('access', accessToken, {
           maxAge: 15 * 60 * 1000,
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: isProduction ? 'none' : 'lax',
-          path: '/',
+          ...getCookieOptions(),
         });
         res.cookie('refresh', refreshToken, {
           maxAge: 7 * 24 * 60 * 60 * 1000,
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: isProduction ? 'none' : 'lax',
-          path: '/',
+          ...getCookieOptions(),
         });
         req.userId = userId;
         return next();
@@ -123,21 +116,18 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
         const accessToken = createAccessToken(user.sub);
         res.cookie('access', accessToken, {
           maxAge: 15 * 60 * 1000,
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: isProduction ? 'none' : 'lax',
-          path: '/',
+          ...getCookieOptions(),
         });
         req.userId = userId;
         return next();
       }
-      clearCookie(res);
+      clearAuthCookies(res);
       return next(new ApiError('請重新登入', { statusCode: 401 }));
     }
-    clearCookie(res);
+    clearAuthCookies(res);
     return next(new ApiError('請重新登入', { statusCode: 401 }));
   } catch (error) {
-    clearCookie(res);
+    clearAuthCookies(res);
     return next(new ApiError('請重新登入', { statusCode: 401 }));
   }
 };
