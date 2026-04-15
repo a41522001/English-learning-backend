@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { WordService } from '../../services/wordService';
 import type { PrismaClient } from '@prisma/client';
-import ApiError from '../../models/errorModel';
+
 // #region handleGetSubjectCategory
 describe('handleGetSubjectCategory', () => {
   it('取得主題類別', async () => {
