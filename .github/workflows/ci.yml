@@ -12,6 +12,8 @@ jobs:
           node-version: 24
       - name: 安裝依賴
         run: npm ci
+      - name: 型別檢查
+        run: npm run typecheck
       - name: 跑測試
         run: npm run vitest
       - name: 印出成功訊息
