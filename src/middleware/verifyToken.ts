@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import ApiError from '../models/errorModel';
-import { checkAccessToken } from '../services/userService';
+import { userService } from '../services';
 import { RequestCustom, DecodedToken } from '../types';
 import { env } from '../config/env';
 import prisma from '../config/prisma';
