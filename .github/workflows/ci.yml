@@ -11,7 +11,7 @@ jobs:
         with:
           node-version: 24
       - name: 安裝依賴
-        uses: npm run ci
+        run: npm ci
       - name: 跑測試
         run: npm run vitest
       - name: 印出成功訊息
