@@ -5,13 +5,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 抓取程式碼
-        uses: actions/checkout/@v6
+        uses: actions/checkout@v6
       - name: 安裝Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
       - name: 安裝依賴
-        uses: npm ci
+        uses: npm run ci
       - name: 跑測試
         run: npm run vitest
       - name: 印出成功訊息
