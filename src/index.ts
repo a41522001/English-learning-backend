@@ -24,3 +24,5 @@ app.use(handleError);
 app.listen(env.PORT, '0.0.0.0', () => {
   console.log(env.PORT);
 });
+
+export default app;

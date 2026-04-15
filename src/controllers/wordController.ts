@@ -1,17 +1,5 @@
 import { Response, NextFunction } from 'express';
-import {
-  handleGetSubjectWords,
-  handleGetWordExample,
-  handleGetDailyWords,
-  checkDailyWordsTaken,
-  handleSaveLearnedWord,
-  handleDeleteLearnedWord,
-  handleGetLearnedWords,
-  handleGetSubjectCategory,
-  handleGetLearnedWordCount,
-  handleChangeFavorite,
-  handleGetFavorite,
-} from '../services/wordService';
+import { wordService } from '../services/index';
 import ResponseModel from '../utils/response';
 import { getUserId } from '../utils';
 import type { RequestCustom } from '../types/index';
@@ -19,7 +7,7 @@ import type { RequestCustom } from '../types/index';
 //
 export const getSubjectCategory = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
-    const result = await handleGetSubjectCategory();
+    const result = await wordService.handleGetSubjectCategory();
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
@@ -30,7 +18,7 @@ export const getSubjectWords = async (req: RequestCustom, res: Response, next: N
   try {
     const subject = req.query.subject as string;
     const userId = getUserId(req);
-    const result = await handleGetSubjectWords(subject, userId);
+    const result = await wordService.handleGetSubjectWords(subject, userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
@@ -41,7 +29,7 @@ export const getSubjectWords = async (req: RequestCustom, res: Response, next: N
 export const getWordExample = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const wordId = req.query.wordId as string;
-    const result = await handleGetWordExample(wordId);
+    const result = await wordService.handleGetWordExample(wordId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
@@ -52,7 +40,8 @@ export const getWordExample = async (req: RequestCustom, res: Response, next: Ne
 export const getDailyWords = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const userId = getUserId(req);
-    await handleGetDailyWords(userId);
+    const result = await wordService.handleGetDailyWords(userId);
+    res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
   }
@@ -62,7 +51,7 @@ export const getDailyWords = async (req: RequestCustom, res: Response, next: Nex
 export const checkIsDaily = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const userId = getUserId(req);
-    const isDaily = await checkDailyWordsTaken(userId);
+    const isDaily = await wordService.checkDailyWordsTaken(userId);
     res.status(200).json(ResponseModel.successResponse(isDaily));
   } catch (error) {
     next(error);
@@ -74,7 +63,7 @@ export const saveLearnedWord = async (req: RequestCustom, res: Response, next: N
   try {
     const { wordId } = req.body;
     const userId = getUserId(req);
-    await handleSaveLearnedWord(userId, wordId);
+    await wordService.handleSaveLearnedWord(userId, wordId);
     res.status(200).json(ResponseModel.successResponse(null));
   } catch (error) {
     next(error);
@@ -86,7 +75,7 @@ export const deleteLearnedWord = async (req: RequestCustom, res: Response, next:
   try {
     const { wordId } = req.params;
     const userId = getUserId(req);
-    await handleDeleteLearnedWord(userId, wordId);
+    await wordService.handleDeleteLearnedWord(userId, wordId);
     res.status(200).json(ResponseModel.successResponse(null));
   } catch (error) {
     next(error);
@@ -97,7 +86,7 @@ export const deleteLearnedWord = async (req: RequestCustom, res: Response, next:
 export const getLearnedWords = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const userId = getUserId(req);
-    const result = await handleGetLearnedWords(userId);
+    const result = await wordService.handleGetLearnedWords(userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
@@ -110,7 +99,7 @@ export const getLearnedWordsPage = async (req: RequestCustom, res: Response, nex
     const itemPerPage = req.query.itemPerPage as string;
     const page = req.query.page as string;
     const userId = getUserId(req);
-    const result = await handleGetLearnedWords(userId, +itemPerPage, +page);
+    const result = await wordService.handleGetLearnedWords(userId, +itemPerPage, +page);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
@@ -121,7 +110,7 @@ export const getLearnedWordsPage = async (req: RequestCustom, res: Response, nex
 export const getLearnedWordCount = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const userId = getUserId(req);
-    const result = await handleGetLearnedWordCount(userId);
+    const result = await wordService.handleGetLearnedWordCount(userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
@@ -133,7 +122,7 @@ export const changeFavorite = async (req: RequestCustom, res: Response, next: Ne
   try {
     const { wordId, status } = req.body;
     const userId = getUserId(req);
-    await handleChangeFavorite(userId, wordId, status);
+    await wordService.handleChangeFavorite(userId, wordId, status);
     res.status(200).json(ResponseModel.successResponse(null));
   } catch (error) {
     next(error);
@@ -144,7 +133,7 @@ export const changeFavorite = async (req: RequestCustom, res: Response, next: Ne
 export const getFavorite = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const userId = getUserId(req);
-    const result = await handleGetFavorite(userId);
+    const result = await wordService.handleGetFavorite(userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);

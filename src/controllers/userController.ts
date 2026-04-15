@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { handleSignup, handleLogin, getUserinfo, handleLogout } from '../services/userService';
+import { userService } from '../services/index';
 import ResponseModel from '../utils/response';
 import { getUserId } from '../utils/index';
 import type { RequestCustom } from '../types/index';
@@ -9,7 +9,7 @@ import { clearAuthCookies, getCookieOptions } from '../utils/cookie';
 export const signup = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const { username, email, password } = req.body;
-    await handleSignup(username, email, password);
+    await userService.handleSignup(username, email, password);
     res.status(200).json(ResponseModel.successResponse(null, '創建成功, 請登入'));
   } catch (error) {
     next(error);
@@ -20,7 +20,7 @@ export const signup = async (req: RequestCustom, res: Response, next: NextFuncti
 export const login = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    const { access, refresh, ...isDaily } = await handleLogin(email, password);
+    const { access, refresh, ...isDaily } = await userService.handleLogin(email, password);
     res.cookie('access', access, {
       maxAge: 15 * 60 * 1000,
       ...getCookieOptions(),
@@ -39,7 +39,7 @@ export const login = async (req: RequestCustom, res: Response, next: NextFunctio
 export const userinfo = async (req: RequestCustom, res: Response, next: NextFunction) => {
   try {
     const userId = getUserId(req);
-    const result = await getUserinfo(userId);
+    const result = await userService.getUserinfo(userId);
     res.status(200).json(ResponseModel.successResponse(result));
   } catch (error) {
     next(error);
