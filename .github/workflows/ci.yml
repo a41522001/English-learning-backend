@@ -12,9 +12,13 @@ jobs:
           node-version: 24
       - name: 安裝依賴
         run: npm ci
+      - name: Lint 檢查
+        run: npm run lint
+      - name: 格式檢查
+        run: npm run format:check
       - name: 型別檢查
         run: npm run typecheck
       - name: 跑測試
-        run: npm run vitest
+        run: npm run vitest:coverage
       - name: 印出成功訊息
         run: echo "Success!"

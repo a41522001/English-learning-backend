@@ -55,7 +55,10 @@ export const saltPassword = async (password: string): Promise<string> => {
  * @param {string} hashPassword - 資料庫中儲存的hash密碼。
  * @returns {Promise<boolean>} 如果密碼相符則解析為 true，否則為 false。
  */
-export const decodePassword = async (userPassword: string, hashPassword: string): Promise<boolean> => {
+export const decodePassword = async (
+  userPassword: string,
+  hashPassword: string,
+): Promise<boolean> => {
   const isPasswordExist = await bcrypt.compare(userPassword, hashPassword);
   return isPasswordExist;
 };

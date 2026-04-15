@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import user from './routes/userRoute';
 import word from './routes/wordRoute';
+import health from './routes/healthRoute';
 import handleError from './middleware/handleError';
 import verifyToken from './middleware/verifyToken';
 import cookieParser from 'cookie-parser';
@@ -15,9 +16,10 @@ app.use(
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-  })
+  }),
 );
 app.use(cookieParser());
+app.use('/api/health', health);
 app.use('/api/user', user);
 app.use('/api/word', verifyToken, word);
 app.use(handleError);

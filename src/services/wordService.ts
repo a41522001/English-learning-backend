@@ -1,5 +1,12 @@
 import { MappingPartOfSpeech, WordQueryResult } from '../types';
-import type { CheckDaily, LearnedWord, LearnedWordCount, SubjectCategory, WordExample, WordsSubject } from '../types/ResponseType';
+import type {
+  CheckDaily,
+  LearnedWord,
+  LearnedWordCount,
+  SubjectCategory,
+  WordExample,
+  WordsSubject,
+} from '../types/ResponseType';
 import ApiError from '../models/errorModel';
 import type { PrismaClient } from '@prisma/client';
 
@@ -105,7 +112,7 @@ export class WordService {
     // 當前主題
     let currentSubject = subject;
     // 用來存放查找完的單字
-    let result: WordQueryResult[] = [];
+    const result: WordQueryResult[] = [];
 
     do {
       // 需要的筆數
@@ -218,7 +225,9 @@ export class WordService {
         exampleSentenceEn: item.example_sentence_en,
         exampleSentenceZn: item.example_sentence_zh,
         meanZh: item.mean_zh,
-        partOfSpeech: WordService.mappingPartOfSpeech[item.part_of_speech as keyof MappingPartOfSpeech] ?? '未知',
+        partOfSpeech:
+          WordService.mappingPartOfSpeech[item.part_of_speech as keyof MappingPartOfSpeech] ??
+          '未知',
       };
     });
     return mappingData;
@@ -278,7 +287,11 @@ export class WordService {
   }
 
   // 取得已學單字
-  async handleGetLearnedWords(userId: string, itemPerPage?: number, page?: number): Promise<LearnedWord[]> {
+  async handleGetLearnedWords(
+    userId: string,
+    itemPerPage?: number,
+    page?: number,
+  ): Promise<LearnedWord[]> {
     const skip = itemPerPage && page ? (page - 1) * itemPerPage : undefined;
     const res = await this.prisma.words_storage.findMany({
       select: {

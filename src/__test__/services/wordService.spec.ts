@@ -332,8 +332,24 @@ describe('handleGetSubjectWords', () => {
     const wordsDailyFindFirstFn = vi.fn().mockResolvedValue(null);
     const wordDailyCreateManyFn = vi.fn();
     const categorySettingFindManyFn = vi.fn().mockResolvedValue([
-      { subject: 'food', title: '食物', bg_color: '', hover_color: '', icon_color: '', icon: '', content: '' },
-      { subject: 'life', title: '生活', bg_color: '', hover_color: '', icon_color: '', icon: '', content: '' },
+      {
+        subject: 'food',
+        title: '食物',
+        bg_color: '',
+        hover_color: '',
+        icon_color: '',
+        icon: '',
+        content: '',
+      },
+      {
+        subject: 'life',
+        title: '生活',
+        bg_color: '',
+        hover_color: '',
+        icon_color: '',
+        icon: '',
+        content: '',
+      },
     ]);
     const wordsFindManyFn = vi.fn().mockResolvedValue(
       Array.from({ length: 10 }, (_, i) => ({
@@ -371,8 +387,24 @@ describe('handleGetSubjectWords', () => {
     const wordsDailyFindFirstFn = vi.fn().mockResolvedValue(null);
     const wordDailyCreateManyFn = vi.fn();
     const categorySettingFindManyFn = vi.fn().mockResolvedValue([
-      { subject: 'food', title: '食物', bg_color: '', hover_color: '', icon_color: '', icon: '', content: '' },
-      { subject: 'life', title: '生活', bg_color: '', hover_color: '', icon_color: '', icon: '', content: '' },
+      {
+        subject: 'food',
+        title: '食物',
+        bg_color: '',
+        hover_color: '',
+        icon_color: '',
+        icon: '',
+        content: '',
+      },
+      {
+        subject: 'life',
+        title: '生活',
+        bg_color: '',
+        hover_color: '',
+        icon_color: '',
+        icon: '',
+        content: '',
+      },
     ]);
     const wordsFindManyFn = vi
       .fn()
@@ -422,8 +454,24 @@ describe('handleGetSubjectWords', () => {
     const wordsDailyFindFirstFn = vi.fn().mockResolvedValue(null);
     const wordDailyCreateManyFn = vi.fn();
     const categorySettingFindManyFn = vi.fn().mockResolvedValue([
-      { subject: 'food', title: '食物', bg_color: '', hover_color: '', icon_color: '', icon: '', content: '' },
-      { subject: 'life', title: '生活', bg_color: '', hover_color: '', icon_color: '', icon: '', content: '' },
+      {
+        subject: 'food',
+        title: '食物',
+        bg_color: '',
+        hover_color: '',
+        icon_color: '',
+        icon: '',
+        content: '',
+      },
+      {
+        subject: 'life',
+        title: '生活',
+        bg_color: '',
+        hover_color: '',
+        icon_color: '',
+        icon: '',
+        content: '',
+      },
     ]);
     const wordsFindManyFn = vi.fn().mockResolvedValue([]);
     const prismaMock = {
@@ -440,7 +488,9 @@ describe('handleGetSubjectWords', () => {
     } as unknown as PrismaClient;
     const wordService = new WordService(prismaMock);
     const userId = 'user-1';
-    await expect(wordService.handleGetSubjectWords('test', userId)).rejects.toThrow('伺服器錯誤請稍後再試');
+    await expect(wordService.handleGetSubjectWords('test', userId)).rejects.toThrow(
+      '伺服器錯誤請稍後再試',
+    );
     expect(wordDailyCreateManyFn).not.toHaveBeenCalled();
     expect(wordsFindManyFn).toHaveBeenCalled();
   });

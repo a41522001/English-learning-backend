@@ -1,4 +1,9 @@
-import { saltPassword, decodePassword, createAccessToken, generateRefreshTokenTime } from '../utils';
+import {
+  saltPassword,
+  decodePassword,
+  createAccessToken,
+  generateRefreshTokenTime,
+} from '../utils';
 import type { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import ApiError from '../models/errorModel';

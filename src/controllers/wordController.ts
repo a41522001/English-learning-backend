@@ -94,7 +94,11 @@ export const getLearnedWords = async (req: RequestCustom, res: Response, next: N
 };
 
 // 取得已學過單字(分頁)
-export const getLearnedWordsPage = async (req: RequestCustom, res: Response, next: NextFunction) => {
+export const getLearnedWordsPage = async (
+  req: RequestCustom,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const itemPerPage = req.query.itemPerPage as string;
     const page = req.query.page as string;
@@ -107,7 +111,11 @@ export const getLearnedWordsPage = async (req: RequestCustom, res: Response, nex
 };
 
 // 取得已學過單字數量
-export const getLearnedWordCount = async (req: RequestCustom, res: Response, next: NextFunction) => {
+export const getLearnedWordCount = async (
+  req: RequestCustom,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const userId = getUserId(req);
     const result = await wordService.handleGetLearnedWordCount(userId);
