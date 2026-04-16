@@ -45,6 +45,9 @@ jobs:
       - name: 抓取程式碼
         uses: actions/checkout@v6
 
+      - name: 轉換 repo 名稱為小寫
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: 登入 GHCR
         uses: docker/login-action@v4
         with:
@@ -57,7 +60,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/${{ env.REPO }}:latest
 
       - name: 部署到 Linode
         uses: appleboy/ssh-action@v1
@@ -66,6 +69,6 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker pull ghcr.io/${{ github.repository }}:latest
+            docker pull ghcr.io/${{ env.REPO }}:latest
             cd /opt/app
             docker compose up -d
