@@ -3,8 +3,6 @@ import bcrypt from 'bcrypt';
 import { env } from '../config/env';
 import type { RequestCustom } from '../types/index';
 import ApiError from '../models/errorModel';
-import axios, { AxiosPromise } from 'axios';
-import * as deepl from 'deepl-node';
 import { createHash, randomUUID } from 'crypto';
 import type { StringValue } from 'ms';
 /**

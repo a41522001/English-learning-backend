@@ -51,7 +51,7 @@ export const logout = async (req: RequestCustom, res: Response, next: NextFuncti
   try {
     clearAuthCookies(res);
     res.status(200).json(ResponseModel.successResponse(null));
-  } catch (error) {
+  } catch {
     res.status(200).json(ResponseModel.successResponse(null));
   }
 };

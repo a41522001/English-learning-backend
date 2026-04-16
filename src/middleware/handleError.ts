@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import ResponseModel from '../utils/response';
 import ApiError from '../models/errorModel';
 
-const handleError = (err: any, req: Request, res: Response, next: NextFunction) => {
+const handleError = (err: any, req: Request, res: Response) => {
   const isApiError = err instanceof ApiError;
   const status = err.statusCode;
   const errorCode = err.errorCode;

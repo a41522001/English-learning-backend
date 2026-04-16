@@ -1,8 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import ApiError from '../models/errorModel';
-import { userService } from '../services';
 import { RequestCustom, DecodedToken } from '../types';
 import { env } from '../config/env';
 import prisma from '../config/prisma';
@@ -126,7 +125,7 @@ const verifyToken = async (req: RequestCustom, res: Response, next: NextFunction
     }
     clearAuthCookies(res);
     return next(new ApiError('請重新登入', { statusCode: 401 }));
-  } catch (error) {
+  } catch {
     clearAuthCookies(res);
     return next(new ApiError('請重新登入', { statusCode: 401 }));
   }

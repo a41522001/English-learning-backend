@@ -1,21 +1,15 @@
-FROM node:22 AS builder
-
+FROM node:22-alpine AS builder
 WORKDIR /app
-
 COPY package*.json ./
-
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:22
-
+FROM node:22-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --production
-COPY prisma ./prisma         
-RUN npx prisma generate 
-
+RUN npm ci --omit=dev
+COPY prisma ./prisma
+RUN npx prisma generate
 COPY --from=builder /app/dist ./dist
-
 CMD ["npm", "run", "start"]
